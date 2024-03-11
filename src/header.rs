@@ -11,6 +11,12 @@ macro_rules! sum {
     ($h:expr, $($t:expr),*) => ($h + sum!($($t),*));
 }
 
+pub trait Header<'a>: TryFrom<&'a [u8]> {
+
+    fn len() -> usize;
+    
+}
+
 #[macro_export]
 macro_rules! make_header {
     (
@@ -18,17 +24,24 @@ macro_rules! make_header {
         ( $($size: literal -> $field: ident: $type: ident),* $(,)?)
     )  => {
         pub struct $name<'a> {
-            slice: &'a [u8; sum![$($size),*]],
+            raw: &'a [u8],
             $(
                 $field: $type,
             )*
         }
 
+        impl<'a> header::Header<'a> for $name<'a> {
 
-        impl<'a> TryFrom<&'a [u8; sum![$($size),*]]> for $name<'a> {
+            fn len() -> usize {
+                sum![$($size),*]
+            }
+        
+        }
+
+        impl<'a> TryFrom<&'a [u8]> for $name<'a> {
             type Error = header::DecodingError;
 
-            fn try_from(value: &'a [u8; sum![$($size),*]]) -> Result<Self, Self::Error> {
+            fn try_from(value: &'a [u8]) -> Result<Self, Self::Error> {
                 use crate::bit::BitRange;
                 let mut s = 0;
                 $(
@@ -38,7 +51,7 @@ macro_rules! make_header {
                 )*
 
                 Ok(Self {
-                    slice: value,
+                    raw: value,
                     $(
                         $field,
                     )*
@@ -46,12 +59,5 @@ macro_rules! make_header {
             }
         }
 
-        // impl<'a> TryFrom<&'a [u8]> for $name<'a> {
-        //     type Error = header::DecodingError;
-
-        //     fn try_from(value: &'a [u8]) -> Result<Self, Self::Error> {
-        //         Self::try_from(value.try_into())
-        //     }
-        // }
     }
 }

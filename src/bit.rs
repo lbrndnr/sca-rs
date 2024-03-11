@@ -13,7 +13,7 @@ pub trait BitRange {
     fn get_bit(&self, bit: usize) -> Result<bool, BitError>;
 }
 
-impl<const N: usize> BitRange for [u8; N] {
+impl BitRange for [u8] {
     fn get_bit_range<T>(&self, range: Range<usize>) -> Result<T, BitError> where T: TryFrom<usize> {
         let start_bit = range.start;
         let end_bit = range.end;
