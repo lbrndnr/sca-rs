@@ -6,25 +6,25 @@ use header::{
     Header
 };
 
-pub trait PacketParser {
-    fn split_header<'a, H: Header<'a>>(&'a self) -> Result<(H, &[u8]), DecodingError>;
-}
+// pub trait PacketParser {
+//     fn split_header<H: Header>(&self) -> Result<(H, &[u8]), DecodingError>;
+// }
 
-impl<const N: usize> PacketParser for [u8; N] {
-    fn split_header<'a, H: Header<'a>>(&'a self) -> Result<(H, &[u8]), DecodingError> {
-        let hlen = H::len();
-        if self.len() < hlen {
-            return Err(DecodingError::Length)
-        }
+// impl PacketParser for [u8] {
+//     fn split_header<H: Header>(&self) -> Result<(H, &[u8]), DecodingError> {
+//         let hlen = H::num_bits();
+//         if self.len() < hlen {
+//             return Err(DecodingError::Length)
+//         }
 
-        // let hdr = &self[..hlen];
-        // why is this infallible?
-        let hdr = H::try_from(self)
-            .map_err(|_| DecodingError::Length)?;
+//         // let hdr = &self[..hlen];
+//         // why is this infallible?
+//         let hdr = H::try_from(self)
+//             .map_err(|_| DecodingError::Length)?;
         
-        Ok((hdr, &self[hlen..]))
-    }
-}
+//         Ok((hdr, &self[hlen..]))
+//     }
+// }
 
 #[cfg(test)]
 mod tests {
@@ -42,10 +42,16 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let raw = b"E\x00\x00\x14\x00\x01\x00\x00\n\x00\xc0\xa8\x01x\xc0\xa8\x01\x01";
+        let raw = [0b01000110, 0b11001101, 0b11000000];
         let hdr = TestHeader::try_from(raw.as_slice()).unwrap();
 
-        assert_eq!(TestHeader::len(), 18);
-        assert_eq!(hdr.field_1, 0);
+        assert_eq!(TestHeader::num_bits(), 18);
+        assert_eq!(hdr.field_1, 0b0);
+        assert_eq!(hdr.field_2, 0b1000110);
+        assert_eq!(hdr.field_3, 0b1100110111);
+
+        let hdr_raw: Vec<u8> = hdr.into();
+        assert_eq!(hdr_raw.as_slice(), raw);
+
     }
 }
