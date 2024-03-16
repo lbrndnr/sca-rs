@@ -22,14 +22,14 @@ macro_rules! make_header {
     (
         $name: ident
         ( $($size: literal -> $field: ident: $type: ident),* $(,)?)
-    )  => {
+    ) => {
         pub struct $name {
             $(
                 $field: $type,
             )*
         }
 
-        impl header::Header for $name {
+        impl Header for $name {
 
             fn num_bits() -> usize {
                 sum![$($size),*]
@@ -38,7 +38,7 @@ macro_rules! make_header {
         }
 
         impl TryFrom<&[u8]> for $name {
-            type Error = header::DecodingError;
+            type Error = DecodingError;
 
             fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
                 use crate::bit::BitRange;
@@ -86,3 +86,21 @@ macro_rules! make_header {
 
     }
 }
+
+make_header!(
+    IPv4 (
+        04 -> version: u8,
+        04 -> hdr_len: u8,
+        06 -> dscp: u8,
+        02 -> ecn: u8,
+        16 -> len: u16,
+        16 -> id: u16,
+        03 -> flags: u8,
+        13 -> frag_offset: u16,
+        08 -> ttl: u8,
+        08 -> protocol: u8,
+        16 -> checksum: u16,
+        32 -> src: u32,
+        32 -> dst: u32,
+    )
+);
