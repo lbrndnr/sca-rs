@@ -4,8 +4,9 @@ use scars::{
     bit::BitRange, sum, header::DecodingError, bit,
 };
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, Default, PartialEq)]
 enum TestEnum {
+    #[default]
     Opt1,
     Opt2
 }
@@ -36,10 +37,10 @@ impl TestEnum {
 
 make_header!(
     TestHeader (
-        1  -> field_1: u128,
-        7  -> field_2: u8,
-        10 -> field_3: u32,
-        3 -> field_4: TestEnum
+        field_1: u128,     1,
+        field_2: u8,       7,
+        field_3: u32,     10,
+        field_4: TestEnum, 3,
     )
 );
 

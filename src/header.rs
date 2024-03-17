@@ -21,7 +21,7 @@ pub trait Header: for<'a> TryFrom<&'a [u8]> {
 macro_rules! make_header {
     (
         $name: ident
-        ( $($size: literal -> $field: ident: $type: ident),* $(,)?)
+        ( $($field: ident: $type: ty, $size: literal $(if $cond: expr)*),+ $(,)?) 
     ) => {
         pub struct $name {
             $(
@@ -89,18 +89,19 @@ macro_rules! make_header {
 
 make_header!(
     IPv4 (
-        04 -> version: u8,
-        04 -> hdr_len: u8,
-        06 -> dscp: u8,
-        02 -> ecn: u8,
-        16 -> len: u16,
-        16 -> id: u16,
-        03 -> flags: u8,
-        13 -> frag_offset: u16,
-        08 -> ttl: u8,
-        08 -> protocol: u8,
-        16 -> checksum: u16,
-        32 -> src: u32,
-        32 -> dst: u32,
+        version: u8,         04,
+        hdr_len: u8,         04,
+        dscp: u8,            06,
+        ecn: u8,             02,
+        len: u16,            16,
+        id: u16,             16,
+        flags: u8,           03,
+        frag_offset: u16,    13,
+        ttl: u8,             08,
+        protocol: u8,        08,
+        checksum: u16,       16,
+        src: u32,            32,
+        dst: u32,            32,
+        options: u64,        32,
     )
 );

@@ -1,11 +1,6 @@
 pub mod header;
 pub mod bit;
 
-use header::{
-    DecodingError,
-    Header
-};
-
 // pub trait PacketParser {
 //     fn split_header<H: Header>(&self) -> Result<(H, &[u8]), DecodingError>;
 // }
