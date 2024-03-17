@@ -1,3 +1,5 @@
+use std::{net::Ipv4Addr, ops::Deref};
+
 #[derive(Debug, Clone)]
 pub enum DecodingError {
     Length,
@@ -100,8 +102,47 @@ make_header!(
         ttl: u8,             08,
         protocol: u8,        08,
         checksum: u16,       16,
-        src: u32,            32,
-        dst: u32,            32,
+        src: Ipv4Field,      32,
+        dst: Ipv4Field,      32,
         options: u64,        32,
     )
 );
+
+trait ToBeBytes {
+
+    type Bytes;
+
+    fn to_be_bytes(&self) -> Self::Bytes;
+
+}
+
+struct Ipv4Field(Ipv4Addr);
+
+impl Deref for Ipv4Field {
+
+    type Target = Ipv4Addr;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+
+}
+
+impl ToBeBytes for Ipv4Field {
+
+    type Bytes = [u8; 4];
+
+    fn to_be_bytes(&self) -> Self::Bytes {
+        let val: u32 = self.0.into();
+        val.to_be_bytes()
+    }
+
+}
+
+impl From<usize> for Ipv4Field {
+
+    fn from(value: usize) -> Self {
+        Ipv4Field(Ipv4Addr::from(value as u32))
+    }
+
+}
