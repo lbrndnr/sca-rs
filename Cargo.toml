@@ -1,4 +1,8 @@
+workspace = { members = ["header-derive"] }
 [package]
 name = "scars"
 version = "0.1.0"
 edition = "2021"
+
+[dependencies]
+header-derive = { path = "header-derive" }

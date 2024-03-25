@@ -1,22 +1,29 @@
-pub mod header;
-pub mod bit;
+pub use header_derive::Header;
 
-// pub trait PacketParser {
-//     fn split_header<H: Header>(&self) -> Result<(H, &[u8]), DecodingError>;
-// }
+pub enum Error {
+    Decoding
+}
 
-// impl PacketParser for [u8] {
-//     fn split_header<H: Header>(&self) -> Result<(H, &[u8]), DecodingError> {
-//         let hlen = H::num_bits();
-//         if self.len() < hlen {
-//             return Err(DecodingError::Length)
-//         }
+pub trait ToBits {
 
-//         // let hdr = &self[..hlen];
-//         // why is this infallible?
-//         let hdr = H::try_from(self)
-//             .map_err(|_| DecodingError::Length)?;
-        
-//         Ok((hdr, &self[hlen..]))
-//     }
+    fn num_bits() -> usize;
+
+}
+
+// #[derive(Header)]
+// struct IPv4 {
+//     version: u8,
+//     hdr_len: u8,
+//     dscp: u8,
+//     ecn: u8,
+//     len: u16,
+//     id: u16,
+//     flags: u8,
+//     frag_offset: u16,
+//     ttl: u8,
+//     protocol: u8,
+//     checksum: u16,
+//     src: u32,
+//     dst: u32,
+//     options: u64,
 // }
