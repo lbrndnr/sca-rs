@@ -26,18 +26,20 @@ pub fn derive_proc_macro_impl(name: &Ident, hdr: &Vec<HeaderField>) -> TokenStre
                 use scars::bit::BitRange;
                 let mut s = 0;
 
-                let mut res = Self::default();
-
                 #(
                     let val: #ty = value
                         .get_bit_range(s..s+#bit_len)
                         .map_err(|_| Self::Error::Decoding)?;
-                    res.#field = val;
+                    let #field = val;
 
                     s += #bit_len;
                 )*
 
-                Ok(res)
+                Ok(Self {
+                    #(
+                        #field
+                    ),*
+                })
             }
         }
     };

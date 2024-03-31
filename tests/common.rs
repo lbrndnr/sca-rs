@@ -1,6 +1,6 @@
 use scars::Header;
     
-#[derive(Default, Header)]
+#[derive(Header)]
 pub struct TestHeader {
     #[field(bit_len=4)]
     pub version: u8,

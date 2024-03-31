@@ -1,7 +1,7 @@
 mod common;
 
-use scars::ToBits;
 use common::TestHeader;
+use scars::ToBits;
 
 #[test]
 fn it_sums_bit_lens() {
