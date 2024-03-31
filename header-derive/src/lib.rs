@@ -23,6 +23,33 @@ fn field_of(f: &syn::Field) -> Option<&syn::Attribute> {
     None
 }
 
+fn named_value_of(attr: &syn::Attribute, name: &str) -> Option<Expr> {
+    match attr.parse_args() {
+        Ok(syn::Meta::NameValue(nv)) => {
+            if nv.path.is_ident(name) {
+                return Some(nv.value);
+            }
+            None
+        },
+        _ => None
+    }
+}
+
+fn named_lit_int_of(attr: &syn::Attribute, name: &str) -> Option<LitInt> {
+    let val = named_value_of(attr, name);
+    if val.is_none() { 
+        return None
+    }
+
+    if let Expr::Lit(val) = val.unwrap() {
+        if let Lit::Int(val) = val.lit {
+            return Some(val)
+        }
+    }
+
+    None
+}
+
 fn parse_struct(ast: &DeriveInput) -> Vec<HeaderField> {
     let fields = if let syn::Data::Struct(syn::DataStruct {
         fields: syn::Fields::Named(syn::FieldsNamed { ref named, .. }),
@@ -35,27 +62,7 @@ fn parse_struct(ast: &DeriveInput) -> Vec<HeaderField> {
 
     fields.iter().filter_map(|f| {
         if let Some(field) = field_of(f) {
-            let bit_len: Option<LitInt> = match field.parse_args() {
-                Ok(syn::Meta::NameValue(nv)) => {
-                    if nv.path.is_ident("bit_len") {
-                        if let Expr::Lit(val) = nv.value {
-                            if let Lit::Int(val) = val.lit {
-                                Some(val)
-                            }
-                            else {
-                                None
-                            }
-                        }
-                        else {
-                            None
-                        }
-                    }
-                    else {
-                        None
-                    }
-                },
-                _ => None
-            };
+            let bit_len = named_lit_int_of(field, "bit_len");
 
             return bit_len.map(|bit_len| {
                 HeaderField {
