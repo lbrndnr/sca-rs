@@ -3,7 +3,7 @@ mod common;
 use common::TestHeader;
 
 #[test]
-fn it_parses_fields() {
+fn it_deserializes_fields() {
     let raw = [0b01000110, 0b11001101, 0b11000000];
     let hdr = TestHeader::try_from(raw.as_slice()).unwrap();
 
