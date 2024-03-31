@@ -1,27 +1,40 @@
+use crate::HeaderField;
+
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::DeriveInput;
+use syn::Ident;
 
-pub fn derive_proc_macro_impl(ast: &DeriveInput) -> TokenStream {
-    let ident = &input.ident;
+pub fn derive_proc_macro_impl(name: &Ident, hdr: &Vec<HeaderField>) -> TokenStream {
+    let field: Vec<syn::Ident> = hdr
+        .iter()
+        .map(|f| f.name.clone())
+        .collect();
+    let ty: Vec<syn::Type> = hdr
+        .iter()
+        .map(|f| f.ty.clone())
+        .collect();
+    let bit_len: Vec<syn::LitInt> = hdr
+        .iter()
+        .map(|f| f.bit_len.clone())
+        .collect();
 
     let expanded = quote! {
-        impl TryFrom<&[u8]> for #ident {
-            type Error = DecodingError;
+        impl TryFrom<&[u8]> for #name {
+            type Error = scars::Error;
 
             fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
-                use crate::bit::BitRange;
+                use scars::bit::BitRange;
                 let mut s = 0;
 
                 let mut res = Self::default();
 
-                $(
-                    let val: $type = value
-                        .get_bit_range(s..s+$size)
-                        .map_err(|_| Self::Error::TypeTooShort)?;
-                    res.$field = make_opt![val; $($cond)*];
+                #(
+                    let val: #ty = value
+                        .get_bit_range(s..s+#bit_len)
+                        .map_err(|_| Self::Error::Decoding)?;
+                    res.#field = val;
 
-                    s += $size;
+                    s += #bit_len;
                 )*
 
                 Ok(res)

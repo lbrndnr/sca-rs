@@ -1,12 +1,14 @@
 use proc_macro::TokenStream;
 use syn::{
-    parse_macro_input, Data::Struct, DeriveInput, Ident, Expr, Lit, LitInt
+    parse_macro_input, Data::Struct, DeriveInput, Expr, Ident, Lit, LitInt, Type
 };
 
 mod to_bits;
+mod try_from;
 
 struct HeaderField {
     name: Ident,
+    ty: Type,
     bit_len: LitInt
 }
 
@@ -57,6 +59,7 @@ fn parse_struct(ast: &DeriveInput) -> Vec<HeaderField> {
             return bit_len.map(|bit_len| {
                 HeaderField {
                     name: f.ident.clone().unwrap(),
+                    ty: f.ty.clone(),
                     bit_len
                 }
             })
@@ -75,7 +78,10 @@ pub fn header(input: TokenStream) -> TokenStream {
 
     if let Struct(_) = ast.data {
         let hdr = parse_struct(&ast);
-        let to_bits_impl = to_bits::derive_proc_macro_impl(ast.ident, &hdr);
+        let mut to_bits_impl = to_bits::derive_proc_macro_impl(&ast.ident, &hdr);
+        let try_from_impl = try_from::derive_proc_macro_impl(&ast.ident, &hdr);
+
+        to_bits_impl.extend(try_from_impl);
         to_bits_impl.into()
     }
     else {

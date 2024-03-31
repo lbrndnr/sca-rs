@@ -1,5 +1,8 @@
 pub use header_derive::Header;
 
+pub mod bit;
+
+#[derive(Debug)]
 pub enum Error {
     Decoding
 }

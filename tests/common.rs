@@ -1,11 +1,11 @@
 use scars::Header;
     
-#[derive(Header)]
+#[derive(Default, Header)]
 pub struct TestHeader {
     #[field(bit_len=10)]
-    version: u8,
+    pub version: u8,
     #[field(bit_len=16)]
-    src: u16,
+    pub src: u16,
     #[field(bit_len=16)]
-    dst: u16,
+    pub dst: u16,
 }
