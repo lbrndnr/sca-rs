@@ -4,15 +4,6 @@ use syn::DeriveInput;
 
 pub fn derive_proc_macro_impl(ast: &DeriveInput) -> TokenStream {
     let ident = &input.ident;
-    let fields = if let syn::Data::Struct(syn::DataStruct {
-        fields: syn::Fields::Named(syn::FieldsNamed { ref named, .. }),
-        ..
-    }) = ast.data
-    {
-        named
-    } else {
-        unimplemented!();
-    };
 
     let expanded = quote! {
         impl TryFrom<&[u8]> for #ident {
