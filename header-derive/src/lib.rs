@@ -3,6 +3,7 @@ use syn::{
     parse_macro_input, Data::Struct, DeriveInput, Expr, Ident, Lit, LitInt, Type
 };
 
+mod into;
 mod to_bits;
 mod try_from;
 
@@ -78,11 +79,18 @@ pub fn header(input: TokenStream) -> TokenStream {
 
     if let Struct(_) = ast.data {
         let hdr = parse_struct(&ast);
-        let mut to_bits_impl = to_bits::derive_proc_macro_impl(&ast.ident, &hdr);
-        let try_from_impl = try_from::derive_proc_macro_impl(&ast.ident, &hdr);
+        let mut hdr_impl = TokenStream::new();
 
-        to_bits_impl.extend(try_from_impl);
-        to_bits_impl.into()
+        let into_impl = into::derive_proc_macro_impl(&ast.ident, &hdr);
+        hdr_impl.extend(into_impl);
+
+        let to_bits_impl = to_bits::derive_proc_macro_impl(&ast.ident, &hdr);
+        hdr_impl.extend(to_bits_impl);
+
+        let try_from_impl = try_from::derive_proc_macro_impl(&ast.ident, &hdr);
+        hdr_impl.extend(try_from_impl);
+
+        hdr_impl.into()
     }
     else {
         unimplemented!()

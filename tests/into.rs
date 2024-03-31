@@ -3,11 +3,10 @@ mod common;
 use common::TestHeader;
 
 #[test]
-fn it_parses_fields() {
+fn it_parses_bijectively() {
     let raw = [0b01000110, 0b11001101, 0b11000000];
     let hdr = TestHeader::try_from(raw.as_slice()).unwrap();
+    let hdr_raw: Vec<u8> = hdr.into();
 
-    assert_eq!(hdr.version, 0b0100);
-    assert_eq!(hdr.src, 0b0110110011);
-    assert_eq!(hdr.dst, 0b0111000000);
+    assert_eq!(hdr_raw.as_slice(), raw);
 }

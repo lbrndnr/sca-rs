@@ -4,6 +4,6 @@ use scars::ToBits;
 use common::TestHeader;
 
 #[test]
-fn it_implemenets_to_bits() {
+fn it_sums_bit_lens() {
     assert!(TestHeader::num_bits() == 24);
 }
