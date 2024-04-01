@@ -6,3 +6,6 @@ edition = "2021"
 
 [dependencies]
 header-derive = { path = "header-derive" }
+
+[dev-dependencies]
+trybuild = "1.0.91"

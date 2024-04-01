@@ -1,6 +1,6 @@
 use proc_macro::TokenStream;
 use syn::{
-    parse_macro_input, Data::Struct, DeriveInput, Expr, Ident, Lit, LitInt, Type
+    Data::Struct, DeriveInput, Expr, Ident, Lit, LitInt, Type
 };
 
 mod into;
@@ -62,6 +62,7 @@ fn parse_struct(ast: &DeriveInput) -> Vec<HeaderField> {
 
     fields.iter().filter_map(|f| {
         if let Some(field) = field_of(f) {
+            // first we verify whether field uses the expected syntax
             let bit_len = named_lit_int_of(field, "bit_len");
 
             return bit_len.map(|bit_len| {
@@ -82,7 +83,7 @@ fn parse_struct(ast: &DeriveInput) -> Vec<HeaderField> {
 
 #[proc_macro_derive(Header, attributes(field))]
 pub fn header(input: TokenStream) -> TokenStream {
-    let ast = parse_macro_input!(input as DeriveInput);
+    let ast = syn::parse_macro_input!(input as DeriveInput);
 
     if let Struct(_) = ast.data {
         let hdr = parse_struct(&ast);
