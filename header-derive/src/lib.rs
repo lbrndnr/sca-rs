@@ -1,18 +1,13 @@
 use proc_macro::TokenStream;
 use syn::{
-    Data::Struct, 
-    DeriveInput, 
-    Error,
-    Expr, 
-    Ident, 
-    LitInt, 
-    Type
+    spanned::Spanned, Data::Struct, DeriveInput, Error, Expr, Ident, LitInt, Type
 };
 
 mod into;
 mod to_bits;
 mod try_from;
 
+#[allow(dead_code)]
 struct HeaderField {
     name: Ident,
     ty: Type,
@@ -123,21 +118,31 @@ fn parse_struct(ast: &DeriveInput) -> Result<Vec<HeaderField>, Error> {
 
 
 #[proc_macro_derive(Header, attributes(field))]
-pub fn header(input: TokenStream) -> TokenStream {
+pub fn scars_header(input: TokenStream) -> TokenStream {
+    header_impl(input, "scars")
+}
+
+#[proc_macro_derive(CrateHeader, attributes(field))]
+pub fn crate_header(input: TokenStream) -> TokenStream {
+    header_impl(input, "crate")
+}
+
+fn header_impl(input: TokenStream, crate_name: &str) -> TokenStream {
     let ast = syn::parse_macro_input!(input as DeriveInput);
+    let crate_name = Ident::new(crate_name, ast.span());
 
     if let Struct(_) = ast.data {
         match parse_struct(&ast) {
             Ok(hdr) => {
                 let mut hdr_impl = TokenStream::new();
 
-                let into_impl = into::derive_proc_macro_impl(&ast.ident, &hdr);
+                let into_impl = into::derive_proc_macro_impl(&ast.ident, &hdr, &crate_name);
                 hdr_impl.extend(into_impl);
         
-                let to_bits_impl = to_bits::derive_proc_macro_impl(&ast.ident, &hdr);
+                let to_bits_impl = to_bits::derive_proc_macro_impl(&ast.ident, &hdr, &crate_name);
                 hdr_impl.extend(to_bits_impl);
         
-                let try_from_impl = try_from::derive_proc_macro_impl(&ast.ident, &hdr);
+                let try_from_impl = try_from::derive_proc_macro_impl(&ast.ident, &hdr, &crate_name);
                 hdr_impl.extend(try_from_impl);
         
                 hdr_impl.into()

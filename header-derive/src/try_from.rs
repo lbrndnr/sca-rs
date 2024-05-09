@@ -7,7 +7,7 @@ use syn::{
     Expr
 };
 
-pub fn derive_proc_macro_impl(name: &Ident, hdr: &Vec<HeaderField>) -> TokenStream {         
+pub fn derive_proc_macro_impl(name: &Ident, hdr: &Vec<HeaderField>, crate_name: &Ident) -> TokenStream {         
     let field: Vec<_> = hdr
         .iter()
         .map(|f| f.name.clone())
@@ -44,10 +44,10 @@ pub fn derive_proc_macro_impl(name: &Ident, hdr: &Vec<HeaderField>) -> TokenStre
         }
 
         impl TryFrom<&[u8]> for #name {
-            type Error = scars::Error;
+            type Error = #crate_name::Error;
 
             fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
-                use scars::bit::BitRange;
+                use #crate_name::bit::BitRange;
                 let mut s = 0;
 
                 #(

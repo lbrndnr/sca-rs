@@ -4,7 +4,7 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::Ident;
 
-pub fn derive_proc_macro_impl(name: &Ident, hdr: &Vec<HeaderField>) -> TokenStream {
+pub fn derive_proc_macro_impl(name: &Ident, hdr: &Vec<HeaderField>, crate_name: &Ident) -> TokenStream {
     let field: Vec<_> = hdr
         .iter()
         .map(|f| f.name.clone())
@@ -35,7 +35,7 @@ pub fn derive_proc_macro_impl(name: &Ident, hdr: &Vec<HeaderField>) -> TokenStre
         impl From<#name> for Vec<u8> {
             fn from(value: #name) -> Vec<u8> {
                 use core::mem::size_of_val;
-                use scars::{
+                use #crate_name::{
                     bit::BitRange,
                     ToBits
                 };
