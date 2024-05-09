@@ -1,6 +1,18 @@
 use header_derive::CrateHeader;
 
 #[derive(CrateHeader)]
+pub struct Ethernet {
+    #[field(bit_len(48))]
+    dst: u64,
+
+    #[field(bit_len(48))]
+    src: u64,
+
+    #[field(bit_len(16))]
+    r#type: u16,
+}
+
+#[derive(CrateHeader)]
 pub struct IPv4 {
     #[field(bit_len(4))]
     version: u8,
