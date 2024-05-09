@@ -1,6 +1,12 @@
 use proc_macro::TokenStream;
 use syn::{
-    Data::Struct, DeriveInput, Expr, Ident, Lit, LitInt, Type
+    Data::Struct, 
+    DeriveInput, 
+    Error,
+    Expr, 
+    Ident, 
+    LitInt, 
+    Type
 };
 
 mod into;
@@ -10,47 +16,86 @@ mod try_from;
 struct HeaderField {
     name: Ident,
     ty: Type,
-    bit_len: LitInt
+    bit_ty: Type,
+    bit_len: usize,
+    cond: Option<Expr>
 }
 
-fn field_of(f: &syn::Field) -> Option<&syn::Attribute> {
-    for attr in &f.attrs {
-        if attr.path().is_ident("field") {
-            return Some(attr);
+fn ty_inner_type<'a>(wrapper: &str, ty: &'a syn::Type) -> Option<&'a syn::Type> {
+    if let syn::Type::Path(ref p) = ty {
+        if p.path.segments.len() != 1 || p.path.segments[0].ident != wrapper {
+            return None;
         }
-    }
 
-    None
-}
-
-fn named_value_of(attr: &syn::Attribute, name: &str) -> Option<Expr> {
-    match attr.parse_args() {
-        Ok(syn::Meta::NameValue(nv)) => {
-            if nv.path.is_ident(name) {
-                return Some(nv.value);
+        if let syn::PathArguments::AngleBracketed(ref inner_ty) = p.path.segments[0].arguments {
+            if inner_ty.args.len() != 1 {
+                return None;
             }
-            None
-        },
-        _ => None
-    }
-}
 
-fn named_lit_int_of(attr: &syn::Attribute, name: &str) -> Option<LitInt> {
-    let val = named_value_of(attr, name);
-    if val.is_none() { 
-        return None
-    }
-
-    if let Expr::Lit(val) = val.unwrap() {
-        if let Lit::Int(val) = val.lit {
-            return Some(val)
+            let inner_ty = inner_ty.args.first().unwrap();
+            if let syn::GenericArgument::Type(ref t) = inner_ty {
+                return Some(t);
+            }
         }
     }
-
     None
 }
 
-fn parse_struct(ast: &DeriveInput) -> Vec<HeaderField> {
+fn parse_field(field: &syn::Field) -> Result<Option<HeaderField>, Error> {
+    let attr = field.attrs.iter().find(|attr| {
+        attr.path().is_ident("field")
+    });
+
+    if attr.is_none() {
+        return Ok(None)
+    }
+    let attr = attr.unwrap();
+
+    let mut bit_len = 0;
+    let mut cond = None;
+
+    let res = attr.parse_nested_meta(|meta| {
+        if meta.path.is_ident("bit_len") {
+            let content;
+            syn::parenthesized!(content in meta.input);
+            let lit: LitInt = content.parse()?;
+            bit_len = lit.base10_parse()?;
+            Ok(())
+        }
+        else if meta.path.is_ident("cond") {
+            let content;
+            syn::parenthesized!(content in meta.input);
+            let expr: Expr = content.parse()?;
+            cond = Some(expr);
+            Ok(())
+        }
+        else {
+            Err(syn::Error::new_spanned(meta.path, "Unknown field attribute"))
+        }
+    });
+
+    if let Err(e) = res {
+        Err(e)
+    }
+    else {
+        let bit_ty = if let Some(ity) = ty_inner_type("Option", &field.ty) {
+            ity.clone()
+        }
+        else {
+            field.ty.clone()
+        };
+
+        Ok(Some(HeaderField {
+            name: field.ident.clone().unwrap(),
+            ty: field.ty.clone(),
+            bit_ty: bit_ty,
+            bit_len,
+            cond  
+        }))
+    }
+}
+
+fn parse_struct(ast: &DeriveInput) -> Result<Vec<HeaderField>, Error> {
     let fields = if let syn::Data::Struct(syn::DataStruct {
         fields: syn::Fields::Named(syn::FieldsNamed { ref named, .. }),
         ..
@@ -60,24 +105,20 @@ fn parse_struct(ast: &DeriveInput) -> Vec<HeaderField> {
         unimplemented!();
     };
 
-    fields.iter().filter_map(|f| {
-        if let Some(field) = field_of(f) {
-            // first we verify whether field uses the expected syntax
-            let bit_len = named_lit_int_of(field, "bit_len");
-
-            return bit_len.map(|bit_len| {
-                HeaderField {
-                    name: f.ident.clone().unwrap(),
-                    ty: f.ty.clone(),
-                    bit_len
-                }
-            })
+    let mut res = Vec::new();
+    for f in fields {
+        match parse_field(f) {
+            Ok(Some(hdr)) => {
+                res.push(hdr);
+            },
+            Ok(None) => { },
+            Err(e) => {
+                return Err(e)
+            }
         }
-        
-        None
-    })
-    .collect::<Vec<HeaderField>>()
-    .into()
+    }
+
+    Ok(res)
 }
 
 
@@ -86,19 +127,25 @@ pub fn header(input: TokenStream) -> TokenStream {
     let ast = syn::parse_macro_input!(input as DeriveInput);
 
     if let Struct(_) = ast.data {
-        let hdr = parse_struct(&ast);
-        let mut hdr_impl = TokenStream::new();
+        match parse_struct(&ast) {
+            Ok(hdr) => {
+                let mut hdr_impl = TokenStream::new();
 
-        let into_impl = into::derive_proc_macro_impl(&ast.ident, &hdr);
-        hdr_impl.extend(into_impl);
-
-        let to_bits_impl = to_bits::derive_proc_macro_impl(&ast.ident, &hdr);
-        hdr_impl.extend(to_bits_impl);
-
-        let try_from_impl = try_from::derive_proc_macro_impl(&ast.ident, &hdr);
-        hdr_impl.extend(try_from_impl);
-
-        hdr_impl.into()
+                let into_impl = into::derive_proc_macro_impl(&ast.ident, &hdr);
+                hdr_impl.extend(into_impl);
+        
+                let to_bits_impl = to_bits::derive_proc_macro_impl(&ast.ident, &hdr);
+                hdr_impl.extend(to_bits_impl);
+        
+                let try_from_impl = try_from::derive_proc_macro_impl(&ast.ident, &hdr);
+                hdr_impl.extend(try_from_impl);
+        
+                hdr_impl.into()
+            },
+            Err(e) => {
+                e.to_compile_error().into()
+            }
+        }
     }
     else {
         unimplemented!()

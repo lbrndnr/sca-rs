@@ -2,23 +2,47 @@ use crate::HeaderField;
 
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::Ident;
+use syn::{
+    Ident,
+    Expr
+};
 
-pub fn derive_proc_macro_impl(name: &Ident, hdr: &Vec<HeaderField>) -> TokenStream {
-    let field: Vec<syn::Ident> = hdr
+pub fn derive_proc_macro_impl(name: &Ident, hdr: &Vec<HeaderField>) -> TokenStream {         
+    let field: Vec<_> = hdr
         .iter()
         .map(|f| f.name.clone())
         .collect();
-    let ty: Vec<syn::Type> = hdr
+    let ty: Vec<_> = hdr
         .iter()
         .map(|f| f.ty.clone())
         .collect();
-    let bit_len: Vec<syn::LitInt> = hdr
+    let bit_ty: Vec<_> = hdr
+        .iter()
+        .map(|f| f.bit_ty.clone())
+        .collect();
+    let bit_len: Vec<_> = hdr
         .iter()
         .map(|f| f.bit_len.clone())
         .collect();
+    let cond: Vec<_> = hdr
+        .iter()
+        .map(|f| f.cond.clone().unwrap_or(Expr::Verbatim(quote! { true })))
+        .collect();
 
     let expanded = quote! {
+        macro_rules! wrap {
+            (Option<$ty: ident>, $val: expr, $cond: expr) => {
+                if $cond {
+                    Some($ty::from($val))
+                } else {
+                    None
+                }
+            };
+            ($ty: ident, $val: expr, $cond: expr) => {
+                $val as $ty
+            };
+        }
+
         impl TryFrom<&[u8]> for #name {
             type Error = scars::Error;
 
@@ -27,10 +51,10 @@ pub fn derive_proc_macro_impl(name: &Ident, hdr: &Vec<HeaderField>) -> TokenStre
                 let mut s = 0;
 
                 #(
-                    let val: #ty = value
+                    let val: #bit_ty = value
                         .get_bit_range(s..s+#bit_len)
                         .map_err(|_| Self::Error::Decoding)?;
-                    let #field = val;
+                    let mut #field: #ty = wrap!(#ty, val, #cond);
 
                     s += #bit_len;
                 )*

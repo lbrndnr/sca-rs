@@ -2,7 +2,7 @@ use scars::Header;
 
 #[derive(Header)]
 struct TestHeader {
-    #[field(bit_len=4, asdf_qwer=10)]
+    #[field(bit_len(4), asdf_qwer(10))]
     pub version: u8
 }
 
