@@ -15,44 +15,41 @@ pub struct Ethernet {
 #[derive(CrateHeader)]
 pub struct IPv4 {
     #[field(bit_len(4))]
-    version: u8,
+    pub version: u8,
 
     #[field(bit_len(4))]
-    ihl: u8,
+    pub ihl: u8,
 
-    #[field(bit_len(6))]
-    dscp: u8,
-
-    #[field(bit_len(2))]
-    ecn: u8,
+    #[field(bit_len(8))]
+    pub tos: u8,
 
     #[field(bit_len(16))]
-    len: u16,
+    pub len: u16,
 
     #[field(bit_len(16))]
-    id: u16,
+    pub id: u16,
 
     #[field(bit_len(3))]
-    flags: u8,
+    pub flags: u8,
 
     #[field(bit_len(13))]
-    frag_offset: u16,
+    pub frag: u16,
 
     #[field(bit_len(8))]
-    ttl: u8,
+    pub ttl: u8,
 
     #[field(bit_len(8))]
-    protocol: u8,
+    pub protocol: u8,
 
     #[field(bit_len(16))]
-    checksum: u16,
+    pub checksum: u16,
 
     #[field(bit_len(32))]
-    src: u32,
+    pub src: u32,
 
     #[field(bit_len(32))]
-    dst: u32,
+    pub dst: u32,
 
     #[field(bit_len(16), cond(ihl > 5))]
-    options: u64,
+    pub options: u64,
 }
