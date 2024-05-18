@@ -30,16 +30,25 @@ pub fn derive_proc_macro_impl(name: &Ident, hdr: &Vec<HeaderField>, crate_name: 
         .collect();
 
     let expanded = quote! {
-        macro_rules! wrap {
+        macro_rules! wrap_if {
             (Option<$ty: ident>, $val: expr, $cond: expr) => {
                 if $cond {
-                    Some($ty::from($val))
+                    $val.map(|v| $ty::from(v)).ok()
                 } else {
                     None
                 }
             };
             ($ty: ident, $val: expr, $cond: expr) => {
-                $val as $ty
+                $val.unwrap() as $ty
+            };
+        }
+
+        macro_rules! wrap {
+            (Option<$ty: ident>, $val: expr) => {
+                Some($ty::from($val.unwrap()))
+            };
+            ($ty: ident, $val: expr, $cond: expr) => {
+                $val.unwrap() as $ty
             };
         }
 
@@ -51,10 +60,9 @@ pub fn derive_proc_macro_impl(name: &Ident, hdr: &Vec<HeaderField>, crate_name: 
                 let mut s = 0;
 
                 #(
-                    let val: #bit_ty = value
-                        .get_bit_range(s..s+#bit_len)
-                        .map_err(|_| Self::Error::Decoding)?;
-                    let mut #field: #ty = wrap!(#ty, val, #cond);
+                    let bits: Result<#bit_ty, _>  = value
+                        .get_bit_range(s..s+#bit_len);
+                    let #field: #ty = wrap_if!(#ty, bits, #cond);
 
                     s += #bit_len;
                 )*
@@ -65,7 +73,31 @@ pub fn derive_proc_macro_impl(name: &Ident, hdr: &Vec<HeaderField>, crate_name: 
                     ),*
                 })
             }
+
         }
+
+        // impl #name {
+        
+        //     fn try_from_unchecked(value: &[u8]) -> Result<Self, #crate_name::Error> {
+        //         use #crate_name::bit::BitRange;
+        //         let mut s = 0;
+
+        //         #(
+        //             let bits: Result<#bit_ty, _>  = value
+        //                 .get_bit_range(s..s+#bit_len);
+        //             let #field: #ty = wrap!(#ty, bits);
+
+        //             s += #bit_len;
+        //         )*
+
+        //         Ok(Self {
+        //             #(
+        //                 #field
+        //             ),*
+        //         })
+        //     }
+
+        // }
     };
 
     expanded.into()

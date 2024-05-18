@@ -7,10 +7,10 @@ use common::{
 };
 
 #[test]
-fn it_parses_ip4() {
+fn it_parses_ipv4() {
     let hdr = IPv4::try_from(raw::IPV4.as_slice()).unwrap();
     assert_eq!(hdr.version, 6);
-    assert_eq!(hdr.ihl, 12);
+    assert_eq!(hdr.ihl, 5);
     assert_eq!(hdr.tos, 66);
     assert_eq!(hdr.len, 12345);
     assert_eq!(hdr.id, 56789);
@@ -24,6 +24,6 @@ fn it_parses_ip4() {
 }
 
 #[test]
-fn it_serializes_ip4_bijectively() {
+fn it_serializes_ipv4_bijectively() {
     assert_bijective_serialization::<IPv4>(&raw::IPV4);
 }

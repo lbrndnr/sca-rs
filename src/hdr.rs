@@ -51,5 +51,5 @@ pub struct IPv4 {
     pub dst: u32,
 
     #[field(bit_len(16), cond(ihl > 5))]
-    pub options: u64,
+    pub options: Option<u64>,
 }
