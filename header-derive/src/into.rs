@@ -2,7 +2,10 @@ use crate::HeaderField;
 
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::Ident;
+use syn::{
+    Expr,
+    Ident
+};
 
 pub fn derive_proc_macro_impl(name: &Ident, hdr: &Vec<HeaderField>, crate_name: &Ident) -> TokenStream {
     let field: Vec<_> = hdr
@@ -16,6 +19,10 @@ pub fn derive_proc_macro_impl(name: &Ident, hdr: &Vec<HeaderField>, crate_name: 
     let bit_len: Vec<_> = hdr
         .iter()
         .map(|f| f.bit_len.clone())
+        .collect();
+    let cond: Vec<_> = hdr
+        .iter()
+        .map(|f| f.cond.clone().unwrap_or(Expr::Verbatim(quote! { true })))
         .collect();
 
     let expanded = quote! {
@@ -40,20 +47,22 @@ pub fn derive_proc_macro_impl(name: &Ident, hdr: &Vec<HeaderField>, crate_name: 
                     ToBits
                 };
 
-                let len = (#name::num_bits() as f32 / 8.0).ceil() as usize;
+                let len = (value.num_bits() as f32 / 8.0).ceil() as usize;
                 let mut res = vec![0; len];
                 let mut s = 0;
 
                 #(
-                    let bytes = unwrap!(#ty, value.#field).to_be_bytes();
-                    let wrapping_bit_len = 8*size_of_val(&bytes);
-                    for i in 0..#bit_len {
-                        let bit = bytes.get_bit(wrapping_bit_len-#bit_len+i).unwrap();
-                        let mask = (bit as u8) << (7 - ((s+i) % 8));
-                        println!("{i} -> {bit} flags: {:#b}", mask);
-                        res[((s+i) / 8) as usize] |= mask;
+                    let #field = value.#field;
+                    if #cond {
+                        let bytes = unwrap!(#ty, #field).to_be_bytes();
+                        let wrapping_bit_len = 8*size_of_val(&bytes);
+                        for i in 0..#bit_len {
+                            let bit = bytes.get_bit(wrapping_bit_len-#bit_len+i).unwrap();
+                            let mask = (bit as u8) << (7 - ((s+i) % 8));
+                            res[((s+i) / 8) as usize] |= mask;
+                        }
+                        s += #bit_len;
                     }
-                    s += #bit_len;
                 )*
 
                 res

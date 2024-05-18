@@ -33,7 +33,8 @@ pub fn derive_proc_macro_impl(name: &Ident, hdr: &Vec<HeaderField>, crate_name: 
         macro_rules! wrap_if {
             (Option<$ty: ident>, $val: expr, $cond: expr) => {
                 if $cond {
-                    $val.map(|v| $ty::from(v)).ok()
+                    let v = $val.map_err(|_| #crate_name::Error::Decoding)?;
+                    Some($ty::from(v))
                 } else {
                     None
                 }
@@ -45,7 +46,8 @@ pub fn derive_proc_macro_impl(name: &Ident, hdr: &Vec<HeaderField>, crate_name: 
 
         macro_rules! wrap {
             (Option<$ty: ident>, $val: expr) => {
-                Some($ty::from($val.unwrap()))
+                let v = $val.map_err(|_| #crate_name::Error::Decoding)?;
+                Some($ty::from(v))
             };
             ($ty: ident, $val: expr, $cond: expr) => {
                 $val.unwrap() as $ty
@@ -77,8 +79,9 @@ pub fn derive_proc_macro_impl(name: &Ident, hdr: &Vec<HeaderField>, crate_name: 
         }
 
         // impl #name {
-        
-        //     fn try_from_unchecked(value: &[u8]) -> Result<Self, #crate_name::Error> {
+        //     type Error = #crate_name::Error;
+
+        //     fn try_from_unchecked(value: &[u8]) -> Result<Self, Self::Error> {
         //         use #crate_name::bit::BitRange;
         //         let mut s = 0;
 

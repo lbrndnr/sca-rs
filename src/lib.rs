@@ -10,6 +10,6 @@ pub enum Error {
 
 pub trait ToBits {
 
-    fn num_bits() -> usize;
+    fn num_bits(&self) -> usize;
 
 }
