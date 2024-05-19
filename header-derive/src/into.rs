@@ -44,10 +44,10 @@ pub fn derive_proc_macro_impl(name: &Ident, hdr: &Vec<HeaderField>, crate_name: 
                 use core::mem::size_of_val;
                 use #crate_name::{
                     bit::BitRange,
-                    ToBits
+                    BitLen
                 };
 
-                let len = (value.num_bits() as f32 / 8.0).ceil() as usize;
+                let len = (value.bit_len() as f32 / 8.0).ceil() as usize;
                 let mut res = vec![0; len];
                 let mut s = 0;
 

@@ -44,16 +44,6 @@ pub fn derive_proc_macro_impl(name: &Ident, hdr: &Vec<HeaderField>, crate_name: 
             };
         }
 
-        macro_rules! wrap {
-            (Option<$ty: ident>, $val: expr) => {
-                let v = $val.map_err(|_| #crate_name::Error::Decoding)?;
-                Some($ty::from(v))
-            };
-            ($ty: ident, $val: expr, $cond: expr) => {
-                $val.unwrap() as $ty
-            };
-        }
-
         impl TryFrom<&[u8]> for #name {
             type Error = #crate_name::Error;
 
@@ -78,29 +68,6 @@ pub fn derive_proc_macro_impl(name: &Ident, hdr: &Vec<HeaderField>, crate_name: 
 
         }
 
-        // impl #name {
-        //     type Error = #crate_name::Error;
-
-        //     fn try_from_unchecked(value: &[u8]) -> Result<Self, Self::Error> {
-        //         use #crate_name::bit::BitRange;
-        //         let mut s = 0;
-
-        //         #(
-        //             let bits: Result<#bit_ty, _>  = value
-        //                 .get_bit_range(s..s+#bit_len);
-        //             let #field: #ty = wrap!(#ty, bits);
-
-        //             s += #bit_len;
-        //         )*
-
-        //         Ok(Self {
-        //             #(
-        //                 #field
-        //             ),*
-        //         })
-        //     }
-
-        // }
     };
 
     expanded.into()

@@ -8,8 +8,10 @@ pub enum Error {
     Decoding
 }
 
-pub trait ToBits {
+pub trait BitLen {
 
-    fn num_bits(&self) -> usize;
+    fn bit_len(&self) -> usize;
+    
+    fn bit_len_unchecked(&self) -> usize;
 
 }
