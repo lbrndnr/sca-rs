@@ -4,7 +4,7 @@ use syn::{
 };
 
 mod into;
-mod to_bits;
+mod bit_len;
 mod try_from;
 
 #[allow(dead_code)]
@@ -139,7 +139,7 @@ fn header_impl(input: TokenStream, crate_name: &str) -> TokenStream {
                 let into_impl = into::derive_proc_macro_impl(&ast.ident, &hdr, &crate_name);
                 hdr_impl.extend(into_impl);
         
-                let to_bits_impl = to_bits::derive_proc_macro_impl(&ast.ident, &hdr, &crate_name);
+                let to_bits_impl = bit_len::derive_proc_macro_impl(&ast.ident, &hdr, &crate_name);
                 hdr_impl.extend(to_bits_impl);
         
                 let try_from_impl = try_from::derive_proc_macro_impl(&ast.ident, &hdr, &crate_name);
