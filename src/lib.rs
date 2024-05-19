@@ -5,7 +5,17 @@ pub mod hdr;
 
 #[derive(Debug)]
 pub enum Error {
-    Decoding
+    FieldDeserialization(String)
+}
+
+impl PartialEq for Error {
+
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Error::FieldDeserialization(a), Error::FieldDeserialization(b)) => a == b,
+        }
+    }
+
 }
 
 /// Computes the overall bit length of a header.

@@ -29,7 +29,6 @@ pub fn derive_proc_macro_impl(name: &Ident, hdr: &Vec<HeaderField>, crate_name: 
 
     let expanded = quote! {
         impl #crate_name::BitLen for #name {
-
             fn bit_len(&self) -> usize {
                 #impl_checked
             }
@@ -37,7 +36,6 @@ pub fn derive_proc_macro_impl(name: &Ident, hdr: &Vec<HeaderField>, crate_name: 
             fn bit_len_unchecked(&self) -> usize {
                 #impl_unchecked
             }
-            
         }
     };
 

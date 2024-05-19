@@ -3,8 +3,9 @@ use syn::{
     spanned::Spanned, Data::Struct, DeriveInput, Error, Expr, Ident, LitInt, Type
 };
 
-mod into;
 mod bit_len;
+mod debug;
+mod into;
 mod try_from;
 
 #[allow(dead_code)]
@@ -135,12 +136,15 @@ fn header_impl(input: TokenStream, crate_name: &str) -> TokenStream {
         match parse_struct(&ast) {
             Ok(hdr) => {
                 let mut hdr_impl = TokenStream::new();
+        
+                let bit_len_impl = bit_len::derive_proc_macro_impl(&ast.ident, &hdr, &crate_name);
+                hdr_impl.extend(bit_len_impl);
+
+                let debug_impl = debug::derive_proc_macro_impl(&ast.ident, &hdr, &crate_name);
+                hdr_impl.extend(debug_impl);
 
                 let into_impl = into::derive_proc_macro_impl(&ast.ident, &hdr, &crate_name);
                 hdr_impl.extend(into_impl);
-        
-                let to_bits_impl = bit_len::derive_proc_macro_impl(&ast.ident, &hdr, &crate_name);
-                hdr_impl.extend(to_bits_impl);
         
                 let try_from_impl = try_from::derive_proc_macro_impl(&ast.ident, &hdr, &crate_name);
                 hdr_impl.extend(try_from_impl);

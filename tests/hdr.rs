@@ -30,8 +30,7 @@ fn it_deserializes_valid_ipv4() {
 #[test]
 fn it_deserializes_invalid_ipv4() {
     let hdr = IPv4::try_from(raw::ipv4::no_options.as_slice());
-    assert!(hdr.is_err());
-    // assert_eq!(hdr, scars::Error::Decoding);
+    assert_eq!(hdr.unwrap_err(), scars::Error::FieldDeserialization("options".to_string()));
 
     let hdr = IPv4::try_from_unchecked(raw::ipv4::no_options.as_slice()).unwrap();
     assert_eq!(hdr.version, 4);
