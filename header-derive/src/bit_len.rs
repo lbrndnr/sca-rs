@@ -24,18 +24,18 @@ pub fn derive_proc_macro_impl(name: &Ident, hdr: &Vec<HeaderField>, crate_name: 
         .collect();
     let always_true = vec![true_expr; cond.len()];
 
-    let checked_impl = proto_impl(&field, &bit_len, &cond);
-    let unchecked_impl = proto_impl(&field, &bit_len, &always_true);
+    let impl_checked = proto_impl(&field, &bit_len, &cond);
+    let impl_unchecked = proto_impl(&field, &bit_len, &always_true);
 
     let expanded = quote! {
         impl #crate_name::BitLen for #name {
 
             fn bit_len(&self) -> usize {
-                #checked_impl
+                #impl_checked
             }
 
             fn bit_len_unchecked(&self) -> usize {
-                #unchecked_impl
+                #impl_unchecked
             }
             
         }
