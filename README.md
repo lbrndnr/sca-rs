@@ -1,0 +1,3 @@
+Scars is a [scapy](https://github.com/secdev/scapy)-inspired packet crafting library. It's primary goal is to make it as simple as possible to craft and dissect packets. Built on top of powerful [procedural macros](https://doc.rust-lang.org/reference/procedural-macros.html#derive-macros), it provides you with predefined protocols as well as the ability to specify custom ones.
+
+Other crates like [packet-rs](https://github.com/ravi861/packet-rs) exist but they are clumsy to use and feature incomplete.
