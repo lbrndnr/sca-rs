@@ -1,29 +1,14 @@
-use crate::HeaderField;
+use crate::ProtoDef;
 
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{
-    Expr,
-    Ident
-};
+use syn::Ident;
 
-pub fn derive_proc_macro_impl(name: &Ident, hdr: &Vec<HeaderField>, crate_name: &Ident) -> TokenStream {
-    let field: Vec<_> = hdr
-        .iter()
-        .map(|f| f.name.clone())
-        .collect();
-    let ty: Vec<_> = hdr
-        .iter()
-        .map(|f| f.ty.clone())
-        .collect();
-    let bit_len: Vec<_> = hdr
-        .iter()
-        .map(|f| f.bit_len.clone())
-        .collect();
-    let cond: Vec<_> = hdr
-        .iter()
-        .map(|f| f.cond.clone().unwrap_or(Expr::Verbatim(quote! { true })))
-        .collect();
+pub fn derive_proc_macro_impl(name: &Ident, def: &ProtoDef, crate_name: &Ident) -> TokenStream {
+    let field = &def.field;
+    let ty = &def.ty;
+    let bit_len = &def.bit_len;
+    let cond = &def.cond;
 
     let expanded = quote! {
         macro_rules! unwrap {

@@ -1,4 +1,4 @@
-use crate::HeaderField;
+use crate::ProtoDef;
 
 use proc_macro::TokenStream;
 use quote::quote;
@@ -7,25 +7,9 @@ use syn::{
     Ident
 };
 
-pub fn derive_proc_macro_impl(name: &Ident, hdr: &Vec<HeaderField>, crate_name: &Ident) -> TokenStream {
-    let field: Vec<_> = hdr
-        .iter()
-        .map(|f| f.name.clone())
-        .collect();
-    let bit_len: Vec<_> = hdr
-        .iter()
-        .map(|f| f.bit_len.clone())
-        .collect();
-
-    let true_expr = Expr::Verbatim(quote! { true });
-    let cond: Vec<_> = hdr
-        .iter()
-        .map(|f| f.cond.clone().unwrap_or(true_expr.clone()))
-        .collect();
-    let always_true = vec![true_expr; cond.len()];
-
-    let impl_checked = proto_impl(&field, &bit_len, &cond);
-    let impl_unchecked = proto_impl(&field, &bit_len, &always_true);
+pub fn derive_proc_macro_impl(name: &Ident, def: &ProtoDef, crate_name: &Ident) -> TokenStream {
+    let impl_checked = proto_impl(&def.field, &def.bit_len, &def.cond);
+    let impl_unchecked = proto_impl(&def.field, &def.bit_len, &def.true_cond());
 
     let expanded = quote! {
         impl #crate_name::BitLen for #name {

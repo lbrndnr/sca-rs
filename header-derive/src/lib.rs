@@ -1,4 +1,5 @@
 use proc_macro::TokenStream;
+use quote::quote;
 use syn::{
     spanned::Spanned, Data::Struct, DeriveInput, Error, Expr, Ident, LitInt, Type
 };
@@ -8,13 +9,47 @@ mod debug;
 mod into;
 mod try_from;
 
-#[allow(dead_code)]
-struct HeaderField {
+struct FieldDef {
     name: Ident,
     ty: Type,
     bit_ty: Type,
     bit_len: usize,
     cond: Option<Expr>
+}
+
+struct ProtoDef {
+    field: Vec<Ident>,
+    ty: Vec<Type>,
+    bit_ty: Vec<Type>,
+    bit_len: Vec<usize>,
+    cond: Vec<Expr>
+}
+
+impl ProtoDef {
+    
+    fn new() -> Self {
+        ProtoDef {
+            field: Vec::new(),
+            ty: Vec::new(),
+            bit_ty: Vec::new(),
+            bit_len: Vec::new(),
+            cond: Vec::new()
+        }
+    }
+
+    fn push(&mut self, field: FieldDef) {
+        self.field.push(field.name);
+        self.ty.push(field.ty);
+        self.bit_ty.push(field.bit_ty);
+        self.bit_len.push(field.bit_len);
+        self.cond.push(field.cond.unwrap_or(Expr::Verbatim(quote! { true })));
+    }
+
+    fn true_cond(&self) -> Vec<Expr> {
+        let true_expr = Expr::Verbatim(quote! { true });
+        vec![true_expr; self.cond.len()]
+    }
+
 }
 
 fn ty_inner_type<'a>(wrapper: &str, ty: &'a syn::Type) -> Option<&'a syn::Type> {
@@ -37,7 +72,7 @@ fn ty_inner_type<'a>(wrapper: &str, ty: &'a syn::Type) -> Option<&'a syn::Type> 
     None
 }
 
-fn parse_field(field: &syn::Field) -> Result<Option<HeaderField>, Error> {
+fn parse_field(field: &syn::Field) -> Result<Option<FieldDef>, Error> {
     let attr = field.attrs.iter().find(|attr| {
         attr.path().is_ident("field")
     });
@@ -81,7 +116,7 @@ fn parse_field(field: &syn::Field) -> Result<Option<HeaderField>, Error> {
             field.ty.clone()
         };
 
-        Ok(Some(HeaderField {
+        Ok(Some(FieldDef {
             name: field.ident.clone().unwrap(),
             ty: field.ty.clone(),
             bit_ty: bit_ty,
@@ -91,7 +126,7 @@ fn parse_field(field: &syn::Field) -> Result<Option<HeaderField>, Error> {
     }
 }
 
-fn parse_struct(ast: &DeriveInput) -> Result<Vec<HeaderField>, Error> {
+fn parse_struct(ast: &DeriveInput) -> Result<ProtoDef, Error> {
     let fields = if let syn::Data::Struct(syn::DataStruct {
         fields: syn::Fields::Named(syn::FieldsNamed { ref named, .. }),
         ..
@@ -101,7 +136,7 @@ fn parse_struct(ast: &DeriveInput) -> Result<Vec<HeaderField>, Error> {
         unimplemented!();
     };
 
-    let mut res = Vec::new();
+    let mut res = ProtoDef::new();
     for f in fields {
         match parse_field(f) {
             Ok(Some(hdr)) => {
@@ -134,19 +169,19 @@ fn header_impl(input: TokenStream, crate_name: &str) -> TokenStream {
 
     if let Struct(_) = ast.data {
         match parse_struct(&ast) {
-            Ok(hdr) => {
+            Ok(def) => {
                 let mut hdr_impl = TokenStream::new();
         
-                let bit_len_impl = bit_len::derive_proc_macro_impl(&ast.ident, &hdr, &crate_name);
+                let bit_len_impl = bit_len::derive_proc_macro_impl(&ast.ident, &def, &crate_name);
                 hdr_impl.extend(bit_len_impl);
 
-                let debug_impl = debug::derive_proc_macro_impl(&ast.ident, &hdr, &crate_name);
+                let debug_impl = debug::derive_proc_macro_impl(&ast.ident, &def, &crate_name);
                 hdr_impl.extend(debug_impl);
 
-                let into_impl = into::derive_proc_macro_impl(&ast.ident, &hdr, &crate_name);
+                let into_impl = into::derive_proc_macro_impl(&ast.ident, &def, &crate_name);
                 hdr_impl.extend(into_impl);
         
-                let try_from_impl = try_from::derive_proc_macro_impl(&ast.ident, &hdr, &crate_name);
+                let try_from_impl = try_from::derive_proc_macro_impl(&ast.ident, &def, &crate_name);
                 hdr_impl.extend(try_from_impl);
         
                 hdr_impl.into()

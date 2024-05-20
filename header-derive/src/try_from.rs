@@ -1,26 +1,12 @@
-use crate::HeaderField;
+use crate::ProtoDef;
 
 use proc_macro::TokenStream;
 use quote::quote;
-use syn::{
-    Ident,
-    Expr,
-    Type
-};
+use syn::Ident;
 
-pub fn derive_proc_macro_impl(name: &Ident, hdr: &Vec<HeaderField>, crate_name: &Ident) -> TokenStream {            
-    let true_expr = Expr::Verbatim(quote! { true });
-    let cond: Vec<_> = hdr
-        .iter()
-        .map(|f| f.cond.clone().unwrap_or(true_expr.clone()))
-        .collect();
-    let always_true = vec![true_expr; cond.len()];
-
-    let wrap_checked = Ident::new("wrap_checked", name.span());
-    let wrap_unchecked = Ident::new("wrap_unchecked", name.span());
-
-    let impl_checked = proto_impl(&hdr, &cond, &wrap_checked, crate_name);
-    let impl_unchecked = proto_impl(&hdr, &always_true, &wrap_unchecked, crate_name);
+pub fn derive_proc_macro_impl(name: &Ident, def: &ProtoDef, crate_name: &Ident) -> TokenStream {            
+    let impl_checked = proto_impl(name, def, true, crate_name);
+    let impl_unchecked = proto_impl(name, def, false, crate_name);
 
     let expanded = quote! {
         macro_rules! wrap_checked {
@@ -74,23 +60,20 @@ pub fn derive_proc_macro_impl(name: &Ident, hdr: &Vec<HeaderField>, crate_name: 
     expanded.into()
 }
 
-fn proto_impl(hdr: &Vec<HeaderField>, cond: &Vec<Expr>, wrap: &Ident, crate_name: &Ident) -> proc_macro2::TokenStream {
-    let field: Vec<_> = hdr
-        .iter()
-        .map(|f| f.name.clone())
-        .collect();
-    let ty: Vec<_> = hdr
-        .iter()
-        .map(|f| f.ty.clone())
-        .collect();
-    let bit_ty: Vec<_> = hdr
-        .iter()
-        .map(|f| f.bit_ty.clone())
-        .collect();
-    let bit_len: Vec<_> = hdr
-        .iter()
-        .map(|f| f.bit_len.clone())
-        .collect();
+fn proto_impl(name: &Ident, def: &ProtoDef, checked: bool, crate_name: &Ident) -> proc_macro2::TokenStream {
+    let field = &def.field;
+    let ty = &def.ty;
+    let bit_ty = &def.bit_ty;
+    let bit_len = &def.bit_len;
+    let true_cond = &def.true_cond();
+    let cond = if checked { &def.cond } else { true_cond };
+
+    let wrap = if checked {
+        Ident::new("wrap_checked", name.span())
+    }
+    else {
+        Ident::new("wrap_unchecked", name.span())
+    };
 
     quote! {
         let mut s = 0;
