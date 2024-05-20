@@ -33,6 +33,24 @@ pub trait BitLen {
 
 }
 
+/// Similar to the [`From`] trait, but ignores conditional
+/// fields. This is useful when you need to craft an invalid
+/// packet for testing purposes. 
+/// It is the reciprocal of [`IntoUnchecked`].
+pub trait FromUnchecked<T>: Sized {
+    /// Performs the conversion.
+    #[must_use]
+    fn from_unchecked(value: T) -> Self;
+}
+
+/// An attempted conversion that consumes `self`, which may or may not be
+/// expensive.
+pub trait IntoUnchecked<T>: Sized {
+    /// Performs the conversion.
+    #[must_use]
+    fn into_unchecked(self) -> T;
+}
+
 /// Similar to the [`TryFrom`] trait, but ignores conditional
 /// fields. This is useful when you need to craft an invalid
 /// packet for testing purposes. 
@@ -52,5 +70,5 @@ pub trait TryIntoUnchecked<T>: Sized {
     type Error;
 
     /// Performs the conversion.
-    fn try_into(self) -> Result<T, Self::Error>;
+    fn try_into_unchecked(self) -> Result<T, Self::Error>;
 }
