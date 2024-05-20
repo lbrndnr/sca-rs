@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use header_derive::CrateHeader;
 
 #[derive(CrateHeader)]

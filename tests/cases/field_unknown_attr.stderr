@@ -1,5 +1,5 @@
 error: Unknown field attribute
- --> tests/cases/field_unknown_attr.rs:5:25
+ --> tests/cases/field_unknown_attr.rs:7:25
   |
-5 |     #[field(bit_len(4), asdf_qwer(10))]
+7 |     #[field(bit_len(4), asdf_qwer(10))]
   |                         ^^^^^^^^^

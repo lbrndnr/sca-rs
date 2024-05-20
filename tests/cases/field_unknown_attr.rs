@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use scars::Header;
 
 #[derive(Header)]
