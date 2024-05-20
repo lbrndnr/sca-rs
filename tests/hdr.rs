@@ -11,7 +11,7 @@ use common::{
 
 #[test]
 fn it_deserializes_valid_ipv4() {
-    let hdr = IPv4::try_from(raw::ipv4::valid.as_slice()).unwrap();
+    let hdr = IPv4::try_from(raw::ipv4::VALID.as_slice()).unwrap();
     assert_eq!(hdr.version, 4);
     assert_eq!(hdr.ihl, 5);
     assert_eq!(hdr.tos, 66);
@@ -29,10 +29,10 @@ fn it_deserializes_valid_ipv4() {
 
 #[test]
 fn it_deserializes_invalid_ipv4() {
-    let hdr = IPv4::try_from(raw::ipv4::no_options.as_slice());
+    let hdr = IPv4::try_from(raw::ipv4::NO_OPTS.as_slice());
     assert_eq!(hdr.unwrap_err(), scars::Error::FieldDeserialization("options".to_string()));
 
-    let hdr = IPv4::try_from_unchecked(raw::ipv4::no_options.as_slice()).unwrap();
+    let hdr = IPv4::try_from_unchecked(raw::ipv4::NO_OPTS.as_slice()).unwrap();
     assert_eq!(hdr.version, 4);
     assert_eq!(hdr.ihl, 12);
     assert_eq!(hdr.tos, 66);
@@ -50,5 +50,5 @@ fn it_deserializes_invalid_ipv4() {
 
 #[test]
 fn it_serializes_ipv4_bijectively() {
-    assert_bijective_serialization::<IPv4>(&raw::ipv4::valid);
+    assert_bijective_serialization::<IPv4>(&raw::ipv4::VALID);
 }
