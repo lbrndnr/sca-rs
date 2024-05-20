@@ -1,56 +1,14 @@
 use proc_macro::TokenStream;
-use quote::quote;
 use syn::{
-    spanned::Spanned, Data::Struct, DeriveInput, Error, Expr, Ident, LitInt, Type
+    spanned::Spanned, Data::Struct, DeriveInput, Error, Expr, Ident, LitInt
 };
+use utils::def::{FieldDef, ProtoDef};
 
 mod bit_len;
 mod debug;
 mod into;
 mod try_from;
-
-struct FieldDef {
-    name: Ident,
-    ty: Type,
-    bit_ty: Type,
-    bit_len: usize,
-    cond: Option<Expr>
-}
-
-struct ProtoDef {
-    field: Vec<Ident>,
-    ty: Vec<Type>,
-    bit_ty: Vec<Type>,
-    bit_len: Vec<usize>,
-    cond: Vec<Expr>
-}
-
-impl ProtoDef {
-    
-    fn new() -> Self {
-        ProtoDef {
-            field: Vec::new(),
-            ty: Vec::new(),
-            bit_ty: Vec::new(),
-            bit_len: Vec::new(),
-            cond: Vec::new()
-        }
-    }
-
-    fn push(&mut self, field: FieldDef) {
-        self.field.push(field.name);
-        self.ty.push(field.ty);
-        self.bit_ty.push(field.bit_ty);
-        self.bit_len.push(field.bit_len);
-        self.cond.push(field.cond.unwrap_or(Expr::Verbatim(quote! { true })));
-    }
-
-    fn true_cond(&self) -> Vec<Expr> {
-        let true_expr = Expr::Verbatim(quote! { true });
-        vec![true_expr; self.cond.len()]
-    }
-
-}
+mod utils;
 
 fn ty_inner_type<'a>(wrapper: &str, ty: &'a syn::Type) -> Option<&'a syn::Type> {
     if let syn::Type::Path(ref p) = ty {
