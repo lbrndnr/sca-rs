@@ -4,38 +4,48 @@ use core::mem::size_of;
 #[derive(Debug, Clone)]
 pub enum BitError {
     Index,
-    Length
 }
 
 /// A trait for getting subsections of bits from containers of bytes.
 pub trait BitRange {
-    fn get_bit_range<T>(&self, range: Range<usize>) -> Result<T, BitError> where T: TryFrom<usize>;
+    fn get_bit_range(&self, range: Range<usize>) -> Result<Vec<u8>, BitError>;
     fn get_bit(&self, bit: usize) -> Result<bool, BitError>;
 }
 
 impl BitRange for [u8] {
-    fn get_bit_range<T>(&self, range: Range<usize>) -> Result<T, BitError> where T: TryFrom<usize> {
+    fn get_bit_range(&self, range: Range<usize>) -> Result<Vec<u8>, BitError> {
         let start_bit = range.start;
         let end_bit = range.end;
-        let length = end_bit - start_bit;
+        let len_bit = end_bit - start_bit;
 
-        if end_bit/8 > self.len() {
+        if end_bit > 8*self.len() || start_bit > 8*self.len() || start_bit > end_bit {
             return Err(BitError::Index)
         }
-        if length > 8*size_of::<T>() {
-            return Err(BitError::Length)
-        }
-
-        let mut res: usize = 0;
-        for (i, off) in (start_bit..end_bit).zip(1..) {
-            let bit = self.get_bit(i);
-            if let Err(e) = bit { return Err(e) }
-
-            res |= (bit.unwrap() as usize) << (length-off);
+        if len_bit == 0 { 
+            return Ok(vec![]); 
         }
         
-        T::try_from(res)
-            .map_err(|_| BitError::Length)
+        let len = len_bit.div_ceil(8);
+
+        println!("start_bit: {}, end_bit: {}, len: {}", start_bit, end_bit, len);
+
+        let start_mask = 0xFF >> start_bit%8;
+
+        let res = self.iter()
+            .skip(start_bit/8)
+            .take(len)
+            .enumerate()
+            .map(|(i, byte)| {
+                let mut byte = *byte;
+                if i == 0 { byte &= start_mask }
+                if i == len-1 && end_bit%8 != 0 { 
+                    byte >>= 8-(end_bit%8);
+                }
+                
+                byte
+            })
+            .collect();
+        Ok(res)
     }
 
     fn get_bit(&self, bit: usize) -> Result<bool, BitError> {

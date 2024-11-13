@@ -3,19 +3,9 @@ pub use header_derive::Header;
 pub mod bit;
 pub mod hdr;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Error {
     FieldDeserialization(String)
-}
-
-impl PartialEq for Error {
-
-    fn eq(&self, other: &Self) -> bool {
-        match (self, other) {
-            (Error::FieldDeserialization(a), Error::FieldDeserialization(b)) => a == b,
-        }
-    }
-
 }
 
 /// Computes the overall bit length of a header.
@@ -71,4 +61,96 @@ pub trait TryIntoUnchecked<T>: Sized {
 
     /// Performs the conversion.
     fn try_into_unchecked(self) -> Result<T, Self::Error>;
+}
+
+pub trait TryIntoBytes<T>: Sized {
+
+    fn try_into_bytes(self) -> Result<T, Error>;
+
+}
+
+impl TryIntoBytes<u64> for Vec<u8> {
+    
+    fn try_into_bytes(self) -> Result<u64, Error> {
+        u64::try_from_bytes(self.as_slice())
+    }
+
+}
+
+impl TryIntoBytes<u32> for Vec<u8> {
+    
+    fn try_into_bytes(self) -> Result<u32, Error> {
+        u32::try_from_bytes(self.as_slice())
+    }
+
+}
+
+impl TryIntoBytes<u16> for Vec<u8> {
+    
+    fn try_into_bytes(self) -> Result<u16, Error> {
+        u16::try_from_bytes(self.as_slice())
+    }
+
+}
+
+impl TryIntoBytes<u8> for Vec<u8> {
+    
+    fn try_into_bytes(self) -> Result<u8, Error> {
+        u8::try_from_bytes(self.as_slice())
+    }
+
+}
+
+impl TryIntoBytes<Vec<u8>> for Vec<u8> {
+    
+    fn try_into_bytes(self) -> Result<Vec<u8>, Error> {
+        Ok(self)
+    }
+
+}
+
+pub trait TryFromBytes: Sized {
+
+    fn try_from_bytes(bytes: &[u8]) -> Result<Self, Error>;
+
+}
+
+impl TryFromBytes for u64 {
+
+    fn try_from_bytes(bytes: &[u8]) -> Result<Self, Error> {
+        Ok(u64::from_be_bytes(bytes.try_into().unwrap()))
+    }
+
+}
+
+impl TryFromBytes for u32 {
+
+    fn try_from_bytes(bytes: &[u8]) -> Result<Self, Error> {
+        Ok(u32::from_be_bytes(bytes.try_into().unwrap()))
+    }
+
+}
+
+impl TryFromBytes for u16 {
+
+    fn try_from_bytes(bytes: &[u8]) -> Result<Self, Error> {
+        Ok(u16::from_be_bytes(bytes.try_into().unwrap()))
+    }
+
+}
+
+impl TryFromBytes for u8 {
+
+    fn try_from_bytes(bytes: &[u8]) -> Result<Self, Error> {
+        Ok(u8::from_be_bytes(bytes.try_into().unwrap()))
+    }
+
+}
+
+impl TryFromBytes for Vec<u8> {
+
+    fn try_from_bytes(bytes: &[u8]) -> Result<Self, Error> {
+        Ok(bytes.to_vec())
+    }
+    
 }

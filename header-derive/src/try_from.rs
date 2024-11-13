@@ -1,39 +1,25 @@
 use crate::utils::def::ProtoDef;
 
+use anyhow::Result;
 use proc_macro::TokenStream;
-use quote::quote;
-use syn::Ident;
+use quote::{format_ident, quote, ToTokens};
+use syn::{parse_quote, Ident, Type};
 
 pub fn derive_proc_macro_impl(name: &Ident, def: &ProtoDef, crate_name: &Ident) -> TokenStream {            
     let impl_checked = proto_impl(name, def, true, crate_name);
     let impl_unchecked = proto_impl(name, def, false, crate_name);
 
     let expanded = quote! {
-        macro_rules! wrap_checked {
-            (Option<$ty: ident>, $val: expr, $cond: expr) => {
+        macro_rules! wrap {
+            (true, $cond: expr, $bits: expr) => {
                 if $cond {
-                    let v = $val?;
-                    Some($ty::from(v))
+                    Some($bits.try_into_bytes()?)
                 } else {
                     None
                 }
             };
-            ($ty: ident, $val: expr, $cond: expr) => {
-                $val.unwrap() as $ty
-            };
-        }
-
-        macro_rules! wrap_unchecked {
-            (Option<$ty: ident>, $val: expr, $cond: expr) => {
-                if $cond {
-                    $val.map(|v| $ty::from(v))
-                        .ok()
-                } else {
-                    None
-                }
-            };
-            ($ty: ident, $val: expr, $cond: expr) => {
-                $val.unwrap() as $ty
+            (false, $cond: expr, $bits: expr) => {
+                $bits.try_into_bytes()?
             };
         }
 
@@ -63,29 +49,32 @@ pub fn derive_proc_macro_impl(name: &Ident, def: &ProtoDef, crate_name: &Ident) 
 fn proto_impl(name: &Ident, def: &ProtoDef, checked: bool, crate_name: &Ident) -> proc_macro2::TokenStream {
     let field = &def.field;
     let ty = &def.ty;
-    let bit_ty = &def.bit_ty;
+    let opt = &def.optional;
+
     let bit_len = &def.bit_len;
     let true_cond = &def.true_cond();
     let cond = if checked { &def.cond } else { true_cond };
 
-    let wrap = if checked {
-        Ident::new("wrap_checked", name.span())
-    }
-    else {
-        Ident::new("wrap_unchecked", name.span())
-    };
-
     quote! {
+        use #crate_name::{
+            TryIntoBytes
+        };
+
         let mut s = 0;
 
         #(
-            let bits: Result<#bit_ty, _>  = value
-                .get_bit_range(s..s+#bit_len)
-                .map_err(|_| #crate_name::Error::FieldDeserialization(stringify!(#field).to_string()));
+            let bit_len = #bit_len;
+            let bits = if bit_len > 0 {
+                value.get_bit_range(s..s+(bit_len as usize))
+                    .map_err(|_| #crate_name::Error::FieldDeserialization(stringify!(#field).to_string()))
+            }
+            else {
+                Err(#crate_name::Error::FieldDeserialization(stringify!(#field).to_string()))
+            }?;
 
-            let #field: #ty = #wrap!(#ty, bits, #cond);
+            let #field: #ty = wrap!(#opt, #cond, bits);
 
-            s += #bit_len;
+            s += bit_len as usize;
         )*
 
         Ok(Self {

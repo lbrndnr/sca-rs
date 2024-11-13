@@ -63,16 +63,18 @@ fn proto_impl(def: &ProtoDef, checked: bool) -> proc_macro2::TokenStream {
         let mut s = 0;
 
         #(
-            let #field = value.#field;
-            if #cond {
-                let bytes = unwrap!(#ty, #field).to_be_bytes();
+            let #field = unwrap!(#ty, value.#field) as i64;
+            let bit_len = #bit_len;
+            if #cond && bit_len > 0 {
+                let bit_len = bit_len as usize;
+                let bytes = #field.to_be_bytes();
                 let wrapping_bit_len = 8*size_of_val(&bytes);
-                for i in 0..#bit_len {
-                    let bit = bytes.get_bit(wrapping_bit_len-#bit_len+i).unwrap();
+                for i in 0..bit_len {
+                    let bit = bytes.get_bit(wrapping_bit_len-bit_len+i).unwrap();
                     let mask = (bit as u8) << (7 - ((s+i) % 8));
                     res[((s+i) / 8) as usize] |= mask;
                 }
-                s += #bit_len;
+                s += bit_len;
             }
         )*
 

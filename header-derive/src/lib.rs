@@ -1,6 +1,6 @@
 use proc_macro::TokenStream;
 use syn::{
-    spanned::Spanned, Data::Struct, DeriveInput, Error, Expr, Ident, LitInt
+    spanned::Spanned, Data::Struct, DeriveInput, Error, Expr, Ident
 };
 use utils::def::{FieldDef, ProtoDef};
 
@@ -40,15 +40,15 @@ fn parse_field(field: &syn::Field) -> Result<Option<FieldDef>, Error> {
     }
     let attr = attr.unwrap();
 
-    let mut bit_len = 0;
+    let mut bit_len = None;
     let mut cond = None;
 
     let res = attr.parse_nested_meta(|meta| {
         if meta.path.is_ident("bit_len") {
             let content;
             syn::parenthesized!(content in meta.input);
-            let lit: LitInt = content.parse()?;
-            bit_len = lit.base10_parse()?;
+            let expr: Expr = content.parse()?;
+            bit_len = Some(expr);
             Ok(())
         }
         else if meta.path.is_ident("cond") {
@@ -63,21 +63,18 @@ fn parse_field(field: &syn::Field) -> Result<Option<FieldDef>, Error> {
         }
     });
 
+    let bit_len = bit_len.ok_or(syn::Error::new_spanned(attr, "Missing bit_len attribute"))?;
+
     if let Err(e) = res {
         Err(e)
     }
     else {
-        let bit_ty = if let Some(ity) = ty_inner_type("Option", &field.ty) {
-            ity.clone()
-        }
-        else {
-            field.ty.clone()
-        };
+        let optional = ty_inner_type("Option", &field.ty).is_some();
 
         Ok(Some(FieldDef {
             name: field.ident.clone().unwrap(),
             ty: field.ty.clone(),
-            bit_ty: bit_ty,
+            optional,
             bit_len,
             cond  
         }))

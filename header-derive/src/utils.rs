@@ -7,20 +7,19 @@ pub mod def {
         Type
     };
     
-
     pub struct FieldDef {
         pub name: Ident,
         pub ty: Type,
-        pub bit_ty: Type,
-        pub bit_len: usize,
+        pub optional: bool,
+        pub bit_len: Expr,
         pub cond: Option<Expr>
     }
 
     pub struct ProtoDef {
         pub field: Vec<Ident>,
         pub ty: Vec<Type>,
-        pub bit_ty: Vec<Type>,
-        pub bit_len: Vec<usize>,
+        pub optional: Vec<bool>,
+        pub bit_len: Vec<Expr>,
         pub cond: Vec<Expr>
     }
 
@@ -30,7 +29,7 @@ pub mod def {
             ProtoDef {
                 field: Vec::new(),
                 ty: Vec::new(),
-                bit_ty: Vec::new(),
+                optional: Vec::new(),
                 bit_len: Vec::new(),
                 cond: Vec::new()
             }
@@ -39,7 +38,7 @@ pub mod def {
         pub fn push(&mut self, field: FieldDef) {
             self.field.push(field.name);
             self.ty.push(field.ty);
-            self.bit_ty.push(field.bit_ty);
+            self.optional.push(field.optional);
             self.bit_len.push(field.bit_len);
             self.cond.push(field.cond.unwrap_or(Expr::Verbatim(quote! { true })));
         }

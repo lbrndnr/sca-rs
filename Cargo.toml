@@ -6,6 +6,7 @@ edition = "2021"
 
 [dependencies]
 header-derive = { path = "header-derive" }
+syn = { version = "2.0.87", features = ["extra-traits"] }
 
 [dev-dependencies]
 trybuild = "1.0.91"
