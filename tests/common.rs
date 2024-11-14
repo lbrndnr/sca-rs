@@ -1,6 +1,7 @@
 #![allow(unused)]
 
-use scars::Header;
+// TODO: nbitvec shouldn't get imported
+use scars::{Header, hdr::NBitVec};
 use std::fmt::Debug;
     
 #[derive(Header)]

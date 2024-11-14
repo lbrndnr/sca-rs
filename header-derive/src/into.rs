@@ -14,18 +14,18 @@ pub fn derive_proc_macro_impl(name: &Ident, def: &ProtoDef, crate_name: &Ident) 
                 if let Some(val) = $val {
                     val.len()
                 } else {
-                    0
+                    0usize
                 }
             };
             (Option<$ty: ident>, $val: expr) => {
                 if let Some(val) = $val {
-                    $ty::from(val)
+                    val as usize
                 } else {
-                    $ty::default()
+                    0usize
                 }
             };
             ($ty: ident, $val: expr) => {
-                $val as $ty
+                $val as usize
             };
         }
 
@@ -65,27 +65,17 @@ fn proto_impl(def: &ProtoDef, checked: bool) -> proc_macro2::TokenStream {
     let cond = if checked { &def.cond } else { true_cond };
 
     quote! {
-        let len = (value.bit_len() as f32 / 8.0).ceil() as usize;
-        let mut res = vec![0; len];
-        let mut s = 0;
+        let mut res = NBitVec::new();
 
-        // #(
-        //     let #field = unwrap!(#ty, value.#field) as i64;
-        //     let bit_len = #bit_len;
-        //     if #cond && bit_len > 0 {
-        //         let bit_len = bit_len as usize;
-        //         let bytes = #field.to_be_bytes();
-        //         let wrapping_bit_len = 8*size_of_val(&bytes);
-        //         for i in 0..bit_len {
-        //             let bit = bytes.view_bits::<Msb0>()[wrapping_bit_len-bit_len+i] as u8;
+        #(
+            let #field = unwrap!(#ty, value.#field);
+            // TODO: check this at compile time
+            if #cond && #bit_len > 0 {
+                let bits = #field.view_bits::<Msb0>();
+                res.extend_from_bitslice(&bits[bits.len()-#bit_len..bits.len()]);
+            }
+        )*
 
-        //             let mask = bit << (7 - ((s+i) % 8));
-        //             res[((s+i) / 8) as usize] |= mask;
-        //         }
-        //         s += bit_len;
-        //     }
-        // )*
-
-        res
+        res.into()
     }
 }

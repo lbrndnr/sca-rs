@@ -3,11 +3,16 @@ mod common;
 use common::TestHeader;
 
 use bitvec::prelude::*;
+use scars::hdr::NBitVec;
 
 // #[test]
 // fn bit_example() {
 //     let vals = [0b01000110, 0b11001101, 0b11000000] as [u8; 3];
-//     let vec = vals.as_slice().view_bits::<Msb0>()[8..16].to_bitvec();
+//     let vec = vals.as_slice().view_bits::<Msb0>();
+//     vec[4..vec.len()-4]
+//     let mut vec = NBitVec::new();
+//     vec.push(true);
+//     let res: Vec<u8> = vec.into();
 // }
 
 // #[test]
