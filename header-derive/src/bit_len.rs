@@ -10,6 +10,13 @@ pub fn derive_proc_macro_impl(name: &Ident, def: &ProtoDef, crate_name: &Ident) 
 
     let expanded = quote! {
         macro_rules! unwrap {
+            (Option<NBitVec>, $val: expr) => {
+                if let Some(val) = $val.as_ref() {
+                    val.len()
+                } else {
+                    0
+                }
+            };
             (Option<$ty: ident>, $val: expr) => {
                 if let Some(val) = $val {
                     $ty::from(val)
@@ -18,7 +25,7 @@ pub fn derive_proc_macro_impl(name: &Ident, def: &ProtoDef, crate_name: &Ident) 
                 }
             };
             ($ty: ident, $val: expr) => {
-                $val as $ty
+                $val
             };
         }
 

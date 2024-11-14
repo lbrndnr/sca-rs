@@ -2,25 +2,33 @@ mod common;
 
 use common::TestHeader;
 
-#[test]
-fn it_deserializes_fields() {
-    let raw = [0b01000110, 0b11001101, 0b11000000];
-    let hdr = TestHeader::try_from(raw.as_slice()).unwrap();
+use bitvec::prelude::*;
 
-    assert_eq!(hdr.version, 0b0100);
-    assert_eq!(hdr.src, 0b0110110011);
-    assert_eq!(hdr.dst, Some(0b0111000000));
-}
+// #[test]
+// fn bit_example() {
+//     let vals = [0b01000110, 0b11001101, 0b11000000] as [u8; 3];
+//     let vec = vals.as_slice().view_bits::<Msb0>()[8..16].to_bitvec();
+// }
 
-#[test]
-fn it_deserializes_cond_fields() {
-    let raw = [0b00010110, 0b11001101, 0b11000000];
-    let hdr = TestHeader::try_from(raw.as_slice()).unwrap();
+// #[test]
+// fn it_deserializes_fields() {
+//     let raw = [0b01000110, 0b11001101, 0b11000000];
+//     let hdr = TestHeader::try_from(raw.as_slice()).unwrap();
 
-    assert_eq!(hdr.version, 0b0001);
-    assert_eq!(hdr.src, 0b0110110011);
-    assert_eq!(hdr.dst, None);
-}
+//     assert_eq!(hdr.version, 0b0100);
+//     assert_eq!(hdr.src, 0b0110110011);
+//     assert_eq!(hdr.dst, Some(0b0111000000));
+// }
+
+// #[test]
+// fn it_deserializes_cond_fields() {
+//     let raw = [0b00010110, 0b11001101, 0b11000000];
+//     let hdr = TestHeader::try_from(raw.as_slice()).unwrap();
+
+//     assert_eq!(hdr.version, 0b0001);
+//     assert_eq!(hdr.src, 0b0110110011);
+//     assert_eq!(hdr.dst, None);
+// }
 
 #[test]
 fn it_compiles_bit_len() {

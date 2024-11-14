@@ -1,5 +1,6 @@
 #![allow(unused)]
 
+use bitvec::{order::Msb0, vec::BitVec};
 use header_derive::CrateHeader;
 
 #[derive(CrateHeader)]
@@ -13,6 +14,8 @@ pub struct Ethernet {
     #[field(bit_len(16))]
     r#type: u16,
 }
+
+pub type NBitVec = BitVec<u8, Msb0>;
 
 #[derive(CrateHeader)]
 pub struct IPv4 {
@@ -53,5 +56,5 @@ pub struct IPv4 {
     pub dst: u32,
 
     #[field(bit_len(32*(ihl - 5)), cond(ihl > 5))]
-    pub options: Option<u8>,
+    pub options: Option<NBitVec>,
 }

@@ -10,15 +10,22 @@ pub fn derive_proc_macro_impl(name: &Ident, def: &ProtoDef, crate_name: &Ident) 
 
     let expanded = quote! {
         macro_rules! wrap {
-            (true, $cond: expr, $bits: expr) => {
+            (Option<NBitVec>, $cond: expr, $bits: expr) => {
                 if $cond {
-                    Some($bits.try_into_bytes()?)
+                    Some($bits)
                 } else {
                     None
                 }
             };
-            (false, $cond: expr, $bits: expr) => {
-                $bits.try_into_bytes()?
+            (Option<$ty: ident>, $cond: expr, $bits: expr) => {
+                if $cond {
+                    Some($bits.load())
+                } else {
+                    None
+                }
+            };
+            ($ty: ident, $cond: expr, $bits: expr) => {
+                $bits.load()
             };
         }
 
@@ -26,7 +33,7 @@ pub fn derive_proc_macro_impl(name: &Ident, def: &ProtoDef, crate_name: &Ident) 
             type Error = #crate_name::Error;
 
             fn try_from(value: &[u8]) -> Result<Self, Self::Error> {
-                use #crate_name::bit::BitRange;
+                use bitvec::prelude::*;
                 #impl_checked
             }
         }
@@ -35,7 +42,7 @@ pub fn derive_proc_macro_impl(name: &Ident, def: &ProtoDef, crate_name: &Ident) 
             type Error = #crate_name::Error;
 
             fn try_from_unchecked(value: &[u8]) -> Result<Self, Self::Error> {
-                use #crate_name::bit::BitRange;
+                use bitvec::prelude::*;
                 #impl_unchecked
             }
         }
@@ -48,30 +55,26 @@ pub fn derive_proc_macro_impl(name: &Ident, def: &ProtoDef, crate_name: &Ident) 
 fn proto_impl(name: &Ident, def: &ProtoDef, checked: bool, crate_name: &Ident) -> proc_macro2::TokenStream {
     let field = &def.field;
     let ty = &def.ty;
-    let opt = &def.optional;
+    // let opt = &def.optional;
 
     let bit_len = &def.bit_len;
     let true_cond = &def.true_cond();
     let cond = if checked { &def.cond } else { true_cond };
 
     quote! {
-        use #crate_name::{
-            TryIntoBytes
-        };
-
         let mut s = 0;
 
         #(
             let bit_len = #bit_len;
-            let bits = if bit_len > 0 {
-                value.get_bit_range(s..s+(bit_len as usize))
-                    .map_err(|_| #crate_name::Error::FieldDeserialization(stringify!(#field).to_string()))
-            }
-            else {
-                Err(#crate_name::Error::FieldDeserialization(stringify!(#field).to_string()))
-            }?;
 
-            let #field: #ty = wrap!(#opt, #cond, bits);
+            // TODO: check this at compile time
+            if bit_len == 0 {
+                return Err(#crate_name::Error::FieldDeserialization(stringify!(#field).to_string()));
+            }
+
+            let bits = value.view_bits::<Msb0>()[s..s+(bit_len as usize)].to_bitvec();
+
+            let #field: #ty = wrap!(#ty, #cond, bits);
 
             s += bit_len as usize;
         )*

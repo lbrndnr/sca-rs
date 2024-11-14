@@ -5,6 +5,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+bitvec = "1.0.1"
 header-derive = { path = "header-derive" }
 syn = { version = "2.0.87", features = ["extra-traits"] }
 

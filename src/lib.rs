@@ -1,6 +1,5 @@
 pub use header_derive::Header;
 
-pub mod bit;
 pub mod hdr;
 
 #[derive(Debug, PartialEq)]
