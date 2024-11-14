@@ -1,6 +1,5 @@
 use crate::utils::def::ProtoDef;
 
-use anyhow::Result;
 use proc_macro::TokenStream;
 use quote::{format_ident, quote, ToTokens};
 use syn::{parse_quote, Ident, Type};

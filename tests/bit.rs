@@ -30,7 +30,11 @@ fn it_gets_multi_byte_valid_range() {
     assert_eq!(bit, xs);
 
     let bit = xs.get_bit_range(5..13).unwrap();
-    assert_eq!(bit, [0b111, 0b0111]);
+    assert_eq!(bit, [0b1110111]);
+
+    let bit = xs.get_bit_range(5..16).unwrap();
+    assert_eq!(bit, [0b111, 0b01111011]);
+    assert_eq!(u16::from_be_bytes([0b111, 0b01111011]), 1915);
 }
 
 #[test]
