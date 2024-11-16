@@ -1,6 +1,6 @@
 #![allow(unused)]
 
-use scars::Header;
+use scars::{Header, hdr::NBitVec};
 
 #[derive(Header)]
 struct TestHeader {

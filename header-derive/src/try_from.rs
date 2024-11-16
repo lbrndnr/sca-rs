@@ -1,8 +1,7 @@
 use crate::utils::def::ProtoDef;
-
 use proc_macro::TokenStream;
-use quote::{format_ident, quote, ToTokens};
-use syn::{parse_quote, Ident, Type};
+use quote::quote;
+use syn::Ident;
 
 pub fn derive_proc_macro_impl(name: &Ident, def: &ProtoDef, crate_name: &Ident) -> TokenStream {            
     let impl_checked = proto_impl(name, def, true, crate_name);
@@ -52,10 +51,9 @@ pub fn derive_proc_macro_impl(name: &Ident, def: &ProtoDef, crate_name: &Ident) 
     expanded.into()
 }
 
-fn proto_impl(name: &Ident, def: &ProtoDef, checked: bool, crate_name: &Ident) -> proc_macro2::TokenStream {
+fn proto_impl(_: &Ident, def: &ProtoDef, checked: bool, crate_name: &Ident) -> proc_macro2::TokenStream {
     let field = &def.field;
     let ty = &def.ty;
-    // let opt = &def.optional;
 
     let bit_len = &def.bit_len;
     let true_cond = &def.true_cond();
@@ -65,22 +63,19 @@ fn proto_impl(name: &Ident, def: &ProtoDef, checked: bool, crate_name: &Ident) -
         let mut s = 0;
 
         #(
-            let bit_len = #bit_len as i64;
-
-            if bit_len <= 0 {
-                return Err(#crate_name::Error::FieldDeserialization(stringify!(#field).to_string()));   
+            let bit_range = if #checked {
+                s..s+#bit_len as usize
             }
+            else {
+                s..s+(#bit_len as usize).min(value.len() * 8 - s)
+            };
 
-            let bit_len = bit_len as usize;
-
-            let bits = if s + bit_len <= value.len() * 8 {
-                Ok(value.view_bits::<Msb0>()[s..s+bit_len].to_bitvec())
+            let bits = if bit_range.end <= value.len() * 8 {
+                Ok(value.view_bits::<Msb0>()[bit_range.clone()].to_bitvec())
             }
             else {
                 Err(#crate_name::Error::FieldDeserialization(stringify!(#field).to_string()))
             };
-
-            println!("field: {}, s: {s}, bit_len: {bit_len} --> {:?}", stringify!(#field).to_string(), bits);
 
             let valid = if #checked {
                 #cond
@@ -89,10 +84,9 @@ fn proto_impl(name: &Ident, def: &ProtoDef, checked: bool, crate_name: &Ident) -
                 bits.is_ok()
             };
 
-            let #field: #ty = wrap!(#ty, valid, bits);
-            println!("{}: {:?}", stringify!(#field).to_string(), #field);
+            let #field: #ty = wrap!(#ty, valid && bit_range.len() > 0, bits);
 
-            s += bit_len as usize;
+            s += bit_range.len();
         )*
 
         Ok(Self {

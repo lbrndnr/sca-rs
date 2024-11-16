@@ -1,9 +1,6 @@
-mod common;
-
 use common::TestHeader;
 
-use bitvec::prelude::*;
-use scars::hdr::NBitVec;
+mod common;
 
 #[test]
 fn it_deserializes_fields() {
