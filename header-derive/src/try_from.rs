@@ -12,20 +12,20 @@ pub fn derive_proc_macro_impl(name: &Ident, def: &ProtoDef, crate_name: &Ident) 
         macro_rules! wrap {
             (Option<NBitVec>, $cond: expr, $bits: expr) => {
                 if $cond {
-                    Some($bits)
+                    Some($bits?)
                 } else {
                     None
                 }
             };
             (Option<$ty: ident>, $cond: expr, $bits: expr) => {
                 if $cond {
-                    Some($bits.load())
+                    Some($bits?.load_be())
                 } else {
                     None
                 }
             };
             ($ty: ident, $cond: expr, $bits: expr) => {
-                $bits.load()
+                $bits?.load_be()
             };
         }
 
@@ -65,16 +65,32 @@ fn proto_impl(name: &Ident, def: &ProtoDef, checked: bool, crate_name: &Ident) -
         let mut s = 0;
 
         #(
-            let bit_len = #bit_len;
+            let bit_len = #bit_len as i64;
 
-            // TODO: check this at compile time
-            if bit_len == 0 {
-                return Err(#crate_name::Error::FieldDeserialization(stringify!(#field).to_string()));
+            if bit_len <= 0 {
+                return Err(#crate_name::Error::FieldDeserialization(stringify!(#field).to_string()));   
             }
 
-            let bits = value.view_bits::<Msb0>()[s..s+(bit_len as usize)].to_bitvec();
+            let bit_len = bit_len as usize;
 
-            let #field: #ty = wrap!(#ty, #cond, bits);
+            let bits = if s + bit_len <= value.len() * 8 {
+                Ok(value.view_bits::<Msb0>()[s..s+bit_len].to_bitvec())
+            }
+            else {
+                Err(#crate_name::Error::FieldDeserialization(stringify!(#field).to_string()))
+            };
+
+            println!("field: {}, s: {s}, bit_len: {bit_len} --> {:?}", stringify!(#field).to_string(), bits);
+
+            let valid = if #checked {
+                #cond
+            }
+            else {
+                bits.is_ok()
+            };
+
+            let #field: #ty = wrap!(#ty, valid, bits);
+            println!("{}: {:?}", stringify!(#field).to_string(), #field);
 
             s += bit_len as usize;
         )*
