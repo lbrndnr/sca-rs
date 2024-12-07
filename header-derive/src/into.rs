@@ -34,7 +34,7 @@ pub fn derive_proc_macro_impl(name: &Ident, def: &ProtoDef, crate_name: &Ident) 
                 use bitvec::prelude::*;
                 use core::mem::size_of_val;
                 use #crate_name::{
-                    BitLen
+                    BitLen, hdr::NBitVec
                 };
 
                 #impl_checked
@@ -46,7 +46,7 @@ pub fn derive_proc_macro_impl(name: &Ident, def: &ProtoDef, crate_name: &Ident) 
                 use bitvec::prelude::*;
                 use core::mem::size_of_val;
                 use #crate_name::{
-                    BitLen
+                    BitLen, hdr::NBitVec
                 };
 
                 #impl_unchecked
