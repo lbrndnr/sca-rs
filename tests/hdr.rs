@@ -1,13 +1,7 @@
-mod common;
+use common::{assert_bijective_serialization, raw};
+use scars::{hdr::l3::IPv4, TryFromUnchecked};
 
-use scars::{
-    TryFromUnchecked,
-    hdr::IPv4
-};
-use common::{
-    assert_bijective_serialization,
-    raw
-};
+mod common;
 
 #[test]
 fn it_deserializes_valid_ipv4() {
@@ -30,7 +24,10 @@ fn it_deserializes_valid_ipv4() {
 #[test]
 fn it_deserializes_invalid_ipv4() {
     let hdr = IPv4::try_from(raw::ipv4::NO_OPTS.as_slice());
-    assert_eq!(hdr.unwrap_err(), scars::Error::FieldDeserialization("options".to_string()));
+    assert_eq!(
+        hdr.unwrap_err(),
+        scars::Error::FieldDeserialization("options".to_string())
+    );
 
     let hdr = IPv4::try_from_unchecked(raw::ipv4::NO_OPTS.as_slice()).unwrap();
     assert_eq!(hdr.version, 4);
@@ -48,7 +45,10 @@ fn it_deserializes_invalid_ipv4() {
     assert!(hdr.options.is_none());
 
     let hdr = IPv4::try_from(raw::ipv4::OPTS.as_slice());
-    assert_eq!(hdr.unwrap_err(), scars::Error::FieldDeserialization("options".to_string()));
+    assert_eq!(
+        hdr.unwrap_err(),
+        scars::Error::FieldDeserialization("options".to_string())
+    );
 
     let hdr = IPv4::try_from_unchecked(raw::ipv4::OPTS.as_slice()).unwrap();
     assert_eq!(hdr.version, 4);

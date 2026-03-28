@@ -1,21 +1,6 @@
-#![allow(unused)]
-
-use bitvec::{order::Msb0, vec::BitVec};
+#[allow(unused_variables)]
+use crate::hdr::NBitVec;
 use header_derive::CrateHeader;
-
-#[derive(CrateHeader)]
-pub struct Ethernet {
-    #[field(bit_len(48))]
-    dst: u64,
-
-    #[field(bit_len(48))]
-    src: u64,
-
-    #[field(bit_len(16))]
-    r#type: u16,
-}
-
-pub type NBitVec = BitVec<u8, Msb0>;
 
 #[derive(CrateHeader)]
 pub struct IPv4 {

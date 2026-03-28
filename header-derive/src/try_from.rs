@@ -3,7 +3,7 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::Ident;
 
-pub fn derive_proc_macro_impl(name: &Ident, def: &ProtoDef, crate_name: &Ident) -> TokenStream {            
+pub fn derive_proc_macro_impl(name: &Ident, def: &ProtoDef, crate_name: &Ident) -> TokenStream {
     let impl_checked = proto_impl(name, def, true, crate_name);
     let impl_unchecked = proto_impl(name, def, false, crate_name);
 
@@ -51,7 +51,12 @@ pub fn derive_proc_macro_impl(name: &Ident, def: &ProtoDef, crate_name: &Ident) 
     expanded.into()
 }
 
-fn proto_impl(_: &Ident, def: &ProtoDef, checked: bool, crate_name: &Ident) -> proc_macro2::TokenStream {
+fn proto_impl(
+    _: &Ident,
+    def: &ProtoDef,
+    checked: bool,
+    crate_name: &Ident,
+) -> proc_macro2::TokenStream {
     let field = &def.field;
     let ty = &def.ty;
 
@@ -70,8 +75,9 @@ fn proto_impl(_: &Ident, def: &ProtoDef, checked: bool, crate_name: &Ident) -> p
                 s..s+(#bit_len as usize).min(value.len() * 8 - s)
             };
 
+            let bit_len = bit_range.len();
             let bits = if bit_range.end <= value.len() * 8 {
-                Ok(value.view_bits::<Msb0>()[bit_range.clone()].to_bitvec())
+                Ok(value.view_bits::<Msb0>()[bit_range].to_bitvec())
             }
             else {
                 Err(#crate_name::Error::FieldDeserialization(stringify!(#field).to_string()))
@@ -84,9 +90,9 @@ fn proto_impl(_: &Ident, def: &ProtoDef, checked: bool, crate_name: &Ident) -> p
                 bits.is_ok()
             };
 
-            let #field: #ty = wrap!(#ty, valid && bit_range.len() > 0, bits);
+            let #field: #ty = wrap!(#ty, valid && bit_len > 0, bits);
 
-            s += bit_range.len();
+            s += bit_len;
         )*
 
         Ok(Self {
